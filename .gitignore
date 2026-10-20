@@ -1,0 +1,14 @@
+# build output
+bin/
+bin-dev/
+build/
+build-dev/
+dist/
+*.obj
+*.exe
+*.zip
+# local dev bridge + MCP server (not published)
+dev/
+tools/mcp/
+.mcp.json
+build-dev.bat
