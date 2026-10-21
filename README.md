@@ -49,7 +49,7 @@ dragged the item yourself.
 ## Install
 
 1. Close Enshrouded.
-2. Download `QuickDeposit-1.1.0.zip` from [Releases](../../releases/latest) or
+2. Download `QuickDeposit-1.1.1.zip` from [Releases](../../releases/latest) or
    [Nexus Mods](https://www.nexusmods.com/enshrouded/mods/195).
 3. In Steam: right-click Enshrouded > Manage > Browse local files.
 4. Copy `powrprof.dll` from the zip into that folder, next to `enshrouded.exe`.

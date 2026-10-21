@@ -380,13 +380,20 @@ bool IsHotbarPage(const Owner& player, uint32_t pageEntity)
             } __except (EXCEPTION_EXECUTE_HANDLER) {
                 continue;
             }
+            // Both ids must be two distinct pages of the player: a single match can be a
+            // coincidence (an offline world matched an unrelated component this way and the
+            // deposit emptied the hotbar).
+            bool hasA = false, hasB = false;
             for (int p = 0; p < player.pageCount; ++p) {
                 uint32_t id = player.pages[p].entity;
-                if (id != player.entity && (id == a || id == b)) {
-                    g_typeHotbar = types[i];
-                    Log("hotbar: player type %u lists pages %u and %u", types[i], a, b);
-                    break;
-                }
+                if (id == player.entity)
+                    continue;
+                hasA |= id == a;
+                hasB |= id == b;
+            }
+            if (a && b && a != b && hasA && hasB) {
+                g_typeHotbar = types[i];
+                Log("hotbar: player type %u lists pages %u and %u", types[i], a, b);
             }
         }
         if (!g_typeHotbar) {
