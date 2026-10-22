@@ -3,7 +3,8 @@
 #include <string>
 #include <vector>
 
-// Appends a timestamped line to quick-deposit.log in the game folder, and keeps the most
+// Appends a timestamped line to quick-deposit.log in the data folder (greeneye\quick-deposit\
+// under the Greeneye Loader, the game folder standalone), and keeps the most
 // recent lines in memory for the bridge's "logs" op.
 // reload: a newer generation of the mod (hot reload) appends instead of starting the file anew.
 void LogInit(bool reload = false);

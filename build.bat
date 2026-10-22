@@ -1,5 +1,6 @@
 @echo off
-rem Builds bin\powrprof.dll with the VS 2022 Build Tools.
+rem Builds Quick Deposit with the VS 2022 Build Tools: bin\loader\ for the Greeneye Loader (the
+rem release) and the same DLL as the standalone bin\powrprof.dll.
 setlocal
 cd /d "%~dp0"
 call "C:\Program Files (x86)\Microsoft Visual Studio\2022\BuildTools\VC\Auxiliary\Build\vcvars64.bat" >nul || exit /b 1

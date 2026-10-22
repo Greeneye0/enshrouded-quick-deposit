@@ -102,8 +102,11 @@ edit it while the game is closed.
 
 ## How it works
 
-`powrprof.dll` is imported by `enshrouded.exe`, so a copy in the game folder loads first; all
-exports forward to the system DLL. Everything runs on the client:
+The Greeneye Loader (`dbgcore.dll`, `../GreeneyeLoader`) loads
+`greeneye\quick-deposit\quick-deposit.dll` and calls its `GreeneyeModStart`; every hook goes through
+the loader. The same DLL also runs on its own as `powrprof.dll`: `enshrouded.exe` imports
+`powrprof.dll`, so a copy in the game folder loads first and forwards every export to the system
+DLL. Everything runs on the client:
 
 - `client.cpp` hooks the per-frame UI command loop and the UI dispatcher. A second Sort
   Inventory within `doubleSortMs` starts a small state machine: snapshot, "Deposit Stacks"

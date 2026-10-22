@@ -16,5 +16,6 @@ struct Config
     char excludeChests[256] = ""; // comma-separated chest names the mod never touches
 };
 
-// Reads quick-deposit.ini from the game folder; missing keys keep their defaults.
+// Reads quick-deposit.ini from the data folder (greeneye\quick-deposit\ under the Greeneye
+// Loader, the game folder standalone); missing keys keep their defaults.
 Config LoadConfig();
