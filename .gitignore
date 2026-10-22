@@ -12,3 +12,7 @@ dev/
 tools/mcp/
 .mcp.json
 build-dev.bat
+bin-hot/
+build-hot/
+build-hot.bat
+tools/hot-reload.sh

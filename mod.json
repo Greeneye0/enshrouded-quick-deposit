@@ -1,0 +1,10 @@
+{
+    "id": "quick-deposit",
+    "name": "Quick Deposit",
+    "version": "1.2.0",
+    "dll": "quick-deposit.dll",
+    "side": "client",
+    "api": 1,
+    "description": "G twice in your inventory: sorts your backpack into the right chests in your base.",
+    "author": "GreeneyeDS"
+}

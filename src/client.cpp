@@ -4,11 +4,12 @@
 // F7 runs as a small state machine on the client's per-frame UI loop, so nothing ever blocks
 // a frame:
 //   1. snapshot your backpack and the base's chests
-//   2. tier 1: "Deposit Stacks" into every chest (same item -> chest that already holds it)
-//   3. wait for the host's changes, then tier 2: each remaining backpack stack moves into a
-//      free slot of a chest holding the same item, else of the chest holding the most items
-//      of the same kind (category; weapons: same weapon type)
-//   4. wait again, then write a report of what went into which chest
+//   2. one burst: tier 2 moves for the stacks no chest holds (each into a free slot of the
+//      chest holding the most items of the same kind...), then tier 1, "Deposit Stacks", into
+//      the chests that hold something you carry
+//   3. wait until the backpack stops changing, then plan again for what is left (stacks that
+//      did not fit in tier 1, anything that arrived meanwhile) and send that
+//   4. write a report of what went into which chest
 //
 // 140845600 UiCommandLoop(app): runs every frame; client = *(*(app + 0x35280) + 0x1b8).
 // 140851530 UiDispatch(client, cmd): command 0x2c becomes a TransferItemToInventoryEvent,
@@ -34,6 +35,7 @@
 #include "bridge.h"
 #endif
 #include "chat.h"
+#include "../../common/greeneye.h"
 #include "client.h"
 #include "inventory.h"
 #include "log.h"
@@ -87,6 +89,9 @@ constexpr uint8_t kCategoryEquipment = 1;
 constexpr float kFixedToMeters = 1.0f / 4294967296.0f;
 constexpr int kMaxChests = 64;
 constexpr int kMaxMoves = 128;
+// Tier 2 runs again after its moves settle while it still finds stacks to move: a snapshot
+// can miss a stack that arrived or changed during the deposit (it took a second G G before).
+constexpr int kMaxTier2Passes = 3;
 
 template <class T> T& At(void* base, size_t offset)
 {
@@ -95,7 +100,7 @@ template <class T> T& At(void* base, size_t offset)
 
 // --- state --------------------------------------------------------------------------------
 
-enum class Phase { Idle, Tier1, Settle1, Tier2, Settle2 };
+enum class Phase { Idle, Tier1, Tier2, Settle2 };
 
 // Why a stack went to its chest, in order of preference.
 enum class Reason { SameItem, SameKind, SameCategory, ChestName, Nearest };
@@ -127,6 +132,16 @@ struct Run {
     uint32_t chests[kMaxChests];
     int next = 0;
     int moveCount = 0;
+    int pass = 0;
+    int passFirst = 0; // first move of the current pass
+    int tier1[kMaxChests]; // chests that get "Deposit Stacks" (indices into chests)
+    int tier1Count = 0;
+    bool tier1Pending = false;
+    bool sentThisPass = false;
+    // Settling: done once the backpack changed and then stayed the same for a moment.
+    ULONGLONG settleStart = 0, lastChange = 0;
+    uint64_t lastSig = 0;
+    bool changed = false;
     Move moves[kMaxMoves];
     inv::Owner backpackBefore;
     inv::Owner backpackMid;
@@ -332,6 +347,69 @@ bool ScanBase(void* cl, const Config& cfg, BaseScan& out, std::string& why)
     return true;
 }
 
+void PlanTier2(bool onlyNew);
+
+// Whether chest holds any item in the backpack's storage rows (so "Deposit Stacks" can act).
+bool SharesItem(const inv::Owner& backpack, const inv::Owner& chest)
+{
+    for (int p = 0; p < backpack.pageCount; ++p) {
+        const inv::Page& page = backpack.pages[p];
+        if (!IsStoragePage(page) || inv::IsHotbarPage(backpack, page.entity))
+            continue;
+        for (const auto& st : page.slots)
+            if (st.itemId && CountOf(chest, st.itemId))
+                return true;
+    }
+    return false;
+}
+
+bool AnyChestHolds(uint32_t itemId)
+{
+    for (int c = 0; c < g_run.chestCount; ++c)
+        if (CountOf(g_run.chestsMid[c], itemId))
+            return true;
+    return false;
+}
+
+// A fingerprint of the backpack, to see when the host's changes have arrived.
+uint64_t BackpackSig(uint32_t playerId)
+{
+    static inv::Owner o;
+    if (!inv::ReadOwner(playerId, o))
+        return 0;
+    uint64_t h = 1469598103934665603ull;
+    for (int p = 0; p < o.pageCount; ++p)
+        for (const auto& st : o.pages[p].slots)
+            h = (h ^ (static_cast<uint64_t>(st.itemId) << 20 ^ st.count)) * 1099511628211ull;
+    return h;
+}
+
+void BeginSettle(ULONGLONG now)
+{
+    Run& r = g_run;
+    r.phase = Phase::Settle2;
+    r.settleStart = now;
+    r.nextTime = now + 50;
+}
+
+// Settled once the backpack changed and then stayed the same for kQuietMs (settleMs at most).
+constexpr ULONGLONG kQuietMs = 300;
+bool Settled(ULONGLONG now)
+{
+    Run& r = g_run;
+    if (!r.sentThisPass)
+        return true;
+    uint64_t sig = BackpackSig(r.playerId);
+    if (sig != r.lastSig) {
+        r.lastSig = sig;
+        r.lastChange = now;
+        r.changed = true;
+    }
+    if (r.changed && now - r.lastChange >= kQuietMs)
+        return true;
+    return now - r.settleStart >= static_cast<ULONGLONG>(g_cfg.settleMs);
+}
+
 bool Start(void* cl, std::string& why)
 {
     BaseScan scan;
@@ -361,7 +439,41 @@ bool Start(void* cl, std::string& why)
         r.backpackBefore.pageCount = 0;
     Log("deposit: %d chests in this base; inventories %s (%d of %d chests visible)", r.chestCount,
         readable ? "readable" : "not readable", visible, r.chestCount);
-    r.phase = Phase::Tier1;
+    // Every page of the player: its InventoryCategory, filled slots, and whether it counts as
+    // storage. Items on pages that are not storage are never deposited.
+    {
+        char pages[512];
+        int len = 0;
+        for (int p = 0; p < r.backpackBefore.pageCount && len < static_cast<int>(sizeof(pages)) - 32; ++p) {
+            const inv::Page& page = r.backpackBefore.pages[p];
+            int filled = 0;
+            for (const inv::Stack& s : page.slots)
+                filled += s.itemId ? 1 : 0;
+            const char* role = inv::IsHotbarPage(r.backpackBefore, page.entity) ? "hotbar"
+                               : IsStoragePage(page)                              ? "storage"
+                                                                                  : "kept";
+            len += snprintf(pages + len, sizeof(pages) - len, " %u:kind%u:%d/%d:%s", page.entity,
+                            static_cast<unsigned>(page.kind), filled, inv::kSlotsPerPage, role);
+        }
+        Log("deposit: your %d pages (entity:kind:filled:role):%s", r.backpackBefore.pageCount, pages);
+    }
+
+    // Tier 1 only where it can do something: chests holding an item you carry (all of them
+    // when the contents can't be read).
+    r.tier1Count = 0;
+    for (int c = 0; c < r.chestCount; ++c)
+        if (!r.chestsVisible || SharesItem(r.backpackBefore, r.chestsBefore[c]))
+            r.tier1[r.tier1Count++] = c;
+    r.tier1Pending = r.tier1Count > 0;
+    r.pass = 0;
+    if (g_cfg.tier2 == Tier2Mode::On && r.backpackBefore.pageCount && r.chestsVisible)
+        PlanTier2(true);
+    r.sentThisPass = r.tier1Pending || r.moveCount > 0;
+    r.lastSig = BackpackSig(playerId);
+    r.changed = false;
+    r.settleStart = r.lastChange = GetTickCount64();
+    r.next = 0;
+    r.phase = r.moveCount ? Phase::Tier2 : r.tier1Pending ? Phase::Tier1 : Phase::Settle2;
     r.nextTime = 0;
     return true;
 }
@@ -373,15 +485,15 @@ void StepTier1(void* cl, ULONGLONG now)
     cmd[0] = kCmdTransfer;
     At<uint32_t>(cmd, kCmdFlagIndex) = kFlagRefillStacks;
     cmd[kCmdFlagOn] = 1;
-    At<uint32_t>(cmd, kCmdTarget) = r.chests[r.next];
+    At<uint32_t>(cmd, kCmdTarget) = r.chests[r.tier1[r.next]];
     At<uint32_t>(cmd, kCmdSource) = r.playerId;
     cmd[kCmdType] = kTypeTransfer;
     Send(cl, cmd);
     r.nextTime = now + g_cfg.delayMs;
-    if (++r.next == r.chestCount) {
-        Log("deposit: tier 1 sent to %d chests", r.chestCount);
-        r.phase = Phase::Settle1;
-        r.nextTime = now + g_cfg.settleMs;
+    if (++r.next == r.tier1Count) {
+        Log("deposit: tier 1 sent to %d of %d chests", r.tier1Count, r.chestCount);
+        r.tier1Pending = false;
+        BeginSettle(now);
     }
 }
 
@@ -396,11 +508,21 @@ bool SameGroup(const inv::ItemDesc& a, const inv::ItemDesc& b)
     return la && la == lb && strncmp(a.raw, b.raw, la) == 0;
 }
 
+// Seedlings share the building-materials category with blocks (both are placed in the world),
+// but a seed chest is no place for blocks.
+bool IsSeedling(const inv::ItemDesc& d)
+{
+    return _strnicmp(d.raw, "Seedling", 8) == 0 || _strnicmp(d.name, "Seedling", 8) == 0;
+}
+
 // Same category; weapons also need the same weapon type, ammunition the same kind of ammo
-// (arrows, spells, fishing bait), equipment the same group (armor, rings, shields...).
+// (arrows, spells, fishing bait), equipment the same group (armor, rings, shields...), and
+// seedlings go only with seedlings.
 bool SameKind(const inv::ItemDesc& a, const inv::ItemDesc& b)
 {
     if (!a.known || !b.known || a.category != b.category)
+        return false;
+    if (IsSeedling(a) != IsSeedling(b))
         return false;
     if (a.category == kCategoryWeapons)
         return memcmp(a.weaponType, b.weaponType, sizeof(a.weaponType)) == 0;
@@ -502,11 +624,15 @@ int NameScore(const char* chestName, const inv::ItemDesc& d)
     return score;
 }
 
-void PlanTier2()
+// onlyNew: plan only the stacks no chest holds (tier 1 takes care of the others).
+void PlanTier2(bool onlyNew)
 {
     Run& r = g_run;
-    r.moveCount = 0;
-    r.next = 0;
+    // Each pass appends to the moves of the earlier ones, so the report lists them all.
+    const int first = r.moveCount;
+    r.next = first;
+    r.passFirst = first;
+    ++r.pass;
     if (!inv::ReadOwner(r.playerId, r.backpackMid))
         return;
     for (int i = 0; i < r.chestCount; ++i)
@@ -528,6 +654,7 @@ void PlanTier2()
                       (pos[2] - me[2]) * (pos[2] - me[2]);
     }
 
+    int seen = 0;
     for (int p = 0; p < r.backpackMid.pageCount; ++p) {
         const inv::Page& page = r.backpackMid.pages[p];
         if (!IsStoragePage(page) || inv::IsHotbarPage(r.backpackMid, page.entity))
@@ -536,9 +663,14 @@ void PlanTier2()
             const inv::Stack st = page.slots[s];
             if (!st.itemId)
                 continue;
+            ++seen;
             inv::ItemDesc d = inv::Describe(st.itemId);
+            if (!d.known)
+                Log("deposit: pass %d: item %u has no item info, left in the backpack", r.pass, st.itemId);
             if (!d.known || !(g_cfg.tier2Categories & (1u << d.category)))
                 continue; // stays with you by design (category not enabled)
+            if (onlyNew && AnyChestHolds(st.itemId))
+                continue;
 
             // Among chests with a free slot: 1. one holding this exact item (the best of them),
             // 2. the one holding the most items of the same kind (weapon or ammo type), 3. the one
@@ -619,6 +751,7 @@ void PlanTier2()
             m.reason = reason;
         }
     }
+    Log("deposit: tier 2 pass %d: %d stacks in the backpack, %d to move", r.pass, seen, r.moveCount - first);
 }
 
 void StepTier2(void* cl, ULONGLONG now)
@@ -635,9 +768,13 @@ void StepTier2(void* cl, ULONGLONG now)
     Send(cl, cmd);
     r.nextTime = now + g_cfg.delayMs;
     if (++r.next == r.moveCount) {
-        Log("deposit: tier 2 sent %d moves", r.moveCount);
-        r.phase = Phase::Settle2;
-        r.nextTime = now + g_cfg.settleMs;
+        Log("deposit: tier 2 sent %d moves", r.moveCount - r.passFirst);
+        if (r.tier1Pending) {
+            r.phase = Phase::Tier1;
+            r.next = 0;
+        } else {
+            BeginSettle(now);
+        }
     }
 }
 
@@ -665,7 +802,7 @@ void WriteReport()
     Run& r = g_run;
     g_report.clear();
     ReportFile rep;
-    rep.f = fopen("quick-deposit-report.txt", "w");
+    rep.f = fopen(greeneye::DataPath("quick-deposit-report.txt"), "w");
     SYSTEMTIME t;
     GetLocalTime(&t);
     rep.Line("Quick Deposit report %04d-%02d-%02d %02d:%02d:%02d", t.wYear, t.wMonth, t.wDay, t.wHour, t.wMinute, t.wSecond);
@@ -824,27 +961,32 @@ void Tick(void* app)
     }
     switch (r.phase) {
     case Phase::Tier1:
-        if (r.chestCount) {
-            StepTier1(cl, now);
-        } else {
-            r.phase = Phase::Settle1;
-        }
-        break;
-    case Phase::Settle1:
-        r.moveCount = 0;
-        if (g_cfg.tier2 != Tier2Mode::Off && r.backpackBefore.pageCount && r.chestsVisible)
-            PlanTier2();
-        if (g_cfg.tier2 == Tier2Mode::On && r.moveCount) {
-            r.phase = Phase::Tier2;
-            r.next = 0;
-        } else {
-            r.phase = Phase::Settle2; // report right away
-        }
+        StepTier1(cl, now);
         break;
     case Phase::Tier2:
         StepTier2(cl, now);
         break;
     case Phase::Settle2:
+        if (!Settled(now)) {
+            r.nextTime = now + 50;
+            break;
+        }
+        if (g_cfg.tier2 == Tier2Mode::DryRun && r.backpackBefore.pageCount && r.chestsVisible) {
+            r.moveCount = 0;
+            PlanTier2(false);
+        } else if (g_cfg.tier2 == Tier2Mode::On && r.sentThisPass && r.pass < kMaxTier2Passes &&
+                   r.moveCount < kMaxMoves && r.backpackBefore.pageCount && r.chestsVisible) {
+            // Look again for what the last pass left or could not see.
+            const int before = r.moveCount;
+            r.lastSig = BackpackSig(r.playerId);
+            r.changed = false;
+            PlanTier2(false);
+            r.sentThisPass = r.moveCount > before;
+            if (r.sentThisPass) {
+                r.phase = Phase::Tier2;
+                break;
+            }
+        }
         WriteReport();
         r.phase = Phase::Idle;
         ++g_runsFinished;
@@ -872,8 +1014,34 @@ constexpr uint8_t kCmdSortInventory = 0x2d;
 Config g_baseCfg;
 ULONGLONG g_lastSort = 0;
 
+#ifdef QD_BRIDGE
+bool g_traceCommands = false;
+
+void TraceCommand(const uint8_t* cmd)
+{
+    char hex[48 * 2 + 16];
+    int n = 0;
+    __try {
+        for (int i = 0; i < 48; ++i)
+            n += sprintf_s(hex + n, sizeof(hex) - n, i % 4 == 0 && i ? " %02x" : "%02x", cmd[i]);
+    } __except (EXCEPTION_EXECUTE_HANDLER) {
+        n += sprintf_s(hex + n, sizeof(hex) - n, " <unreadable>");
+    }
+    Log("cmd %02x: %s", cmd[0], hex);
+}
+#endif
+
 void UiDispatchHook(void* cl, uint8_t* cmd)
 {
+    greeneye::Lease lease; // while it runs Quick Deposit's code; an older generation calls on
+    if (!lease) {
+        g_originalDispatch(cl, cmd);
+        return;
+    }
+#ifdef QD_BRIDGE
+    if (g_traceCommands && cmd)
+        TraceCommand(cmd);
+#endif
     if (cmd && cmd[0] == kCmdSortInventory && g_baseCfg.doubleSortMs > 0) {
         ULONGLONG now = GetTickCount64();
         if (g_lastSort && now - g_lastSort <= static_cast<ULONGLONG>(g_baseCfg.doubleSortMs)) {
@@ -903,12 +1071,19 @@ void SafePump()
 
 void UiCommandLoopHook(void* app)
 {
-    g_client = ClientFromApp(app);
+    {
+        // Released before the frame goes on: the Greeneye Loader swaps generations at the top of
+        // this same frame, which needs every lease ended.
+        greeneye::Lease lease;
+        if (lease) {
+            g_client = ClientFromApp(app);
 #ifdef QD_BRIDGE
-    SafePump();
+            SafePump();
 #endif
-    if (!g_broken)
-        SafeTick(app);
+            if (!g_broken)
+                SafeTick(app);
+        }
+    }
     g_originalLoop(app);
 }
 
@@ -1008,6 +1183,50 @@ const std::vector<std::string>& LastReport()
 {
     return g_report;
 }
+
+#ifdef QD_BRIDGE
+void SetCommandTrace(bool on)
+{
+    g_traceCommands = on;
+    Log("command trace %s", on ? "on" : "off");
+}
+
+// UiDispatch command 0x74 "send chat": +1 type (0 = typed text), +2 text (up to 0x400 bytes),
+// +0x402 u16 length; the client queues it for the server (see Auto Loot's window.cpp).
+bool TransferSlot(uint32_t fromPage, int fromSlot, uint32_t toPage, int toSlot)
+{
+    if (!g_client || !g_originalDispatch || fromSlot < 0 || fromSlot >= inv::kSlotsPerPage || toSlot < 0 ||
+        toSlot >= inv::kSlotsPerPage)
+        return false;
+    alignas(8) uint8_t cmd[kCmdSize] = {};
+    cmd[0] = kCmdTransfer;
+    At<uint32_t>(cmd, kCmdTargetSlot) = toPage;
+    cmd[kCmdTargetSlot + 4] = static_cast<uint8_t>(toSlot);
+    At<uint32_t>(cmd, kCmdSourceSlot) = fromPage;
+    cmd[kCmdSourceSlot + 4] = static_cast<uint8_t>(fromSlot);
+    cmd[kCmdType] = kTypeTransfer;
+    Send(g_client, cmd);
+    Log("transfer: page %u slot %d -> page %u slot %d (bridge)", fromPage, fromSlot, toPage, toSlot);
+    return true;
+}
+
+bool SendChatLine(const char* text)
+{
+    if (!g_client || !g_originalDispatch)
+        return false;
+    alignas(8) static uint8_t cmd[0x410];
+    memset(cmd, 0, sizeof(cmd));
+    size_t n = strlen(text);
+    if (n > 0x400)
+        n = 0x400;
+    cmd[0] = 0x74;
+    memcpy(cmd + 2, text, n);
+    *reinterpret_cast<uint16_t*>(cmd + 0x402) = static_cast<uint16_t>(n);
+    g_originalDispatch(g_client, cmd);
+    return true;
+}
+
+#endif
 
 std::string ChestLabelFor(uint32_t chest)
 {

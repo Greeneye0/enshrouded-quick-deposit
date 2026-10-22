@@ -4,6 +4,7 @@
 #include <deque>
 #include <share.h>
 #include "log.h"
+#include "../../common/greeneye.h"
 
 static CRITICAL_SECTION g_logLock;
 static bool g_logReady = false;
@@ -12,11 +13,12 @@ static std::deque<LogLine> g_ring;
 static uint64_t g_seq = 0;
 constexpr size_t kRingSize = 2000;
 
-void LogInit()
+void LogInit(bool reload)
 {
     InitializeCriticalSection(&g_logLock);
     g_logReady = true;
-    g_logFile = _fsopen("quick-deposit.log", "w", _SH_DENYWR);
+    // Shared, so a reloaded Quick Deposit (hot reload) can append while the old one keeps its handle.
+    g_logFile = _fsopen(greeneye::DataPath("quick-deposit.log"), reload ? "a" : "w", _SH_DENYNO);
 }
 
 void Log(const char* fmt, ...)

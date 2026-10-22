@@ -2,6 +2,8 @@
 #include <cstring>
 #include <vector>
 #include "scan.h"
+#include "../../common/jumppatch.h"
+#include "../../common/greeneye.h"
 
 static bool TextSection(void* module, uint8_t*& start, size_t& size)
 {
@@ -17,6 +19,24 @@ static bool TextSection(void* module, uint8_t*& start, size_t& size)
         }
     }
     return false;
+}
+
+// Hot reload build: patterns are matched in a copy of the game's code taken before any hook,
+// so functions the loader has patched are still found (at their real addresses).
+static const uint8_t* g_copy = nullptr;
+static uint8_t* g_real = nullptr;
+static size_t g_copySize = 0;
+
+bool GameText(uint8_t*& start, size_t& size)
+{
+    return TextSection(nullptr, start, size);
+}
+
+void UseCodeSnapshot(const uint8_t* copy, uint8_t* real, size_t size)
+{
+    g_copy = copy;
+    g_real = real;
+    g_copySize = size;
 }
 
 static std::vector<int> ParsePattern(const char* pattern)
@@ -37,7 +57,15 @@ template <class F> static bool ForEachMatch(const char* pattern, void* module, F
     std::vector<int> bytes = ParsePattern(pattern);
     uint8_t* text;
     size_t size;
-    if (bytes.empty() || bytes[0] < 0 || !TextSection(module, text, size))
+    uintptr_t shift = 0; // from the scanned bytes to the game's
+    if (!module && g_copy) {
+        text = const_cast<uint8_t*>(g_copy);
+        size = g_copySize;
+        shift = reinterpret_cast<uintptr_t>(g_real) - reinterpret_cast<uintptr_t>(g_copy);
+    } else if (!TextSection(module, text, size)) {
+        return false;
+    }
+    if (bytes.empty() || bytes[0] < 0)
         return false;
     const uint8_t first = static_cast<uint8_t>(bytes[0]);
     const size_t n = bytes.size();
@@ -48,14 +76,40 @@ template <class F> static bool ForEachMatch(const char* pattern, void* module, F
         size_t i = 1;
         while (i < n && (bytes[i] < 0 || p[i] == bytes[i]))
             ++i;
-        if (i == n && !onMatch(p))
+        if (i == n && !onMatch(reinterpret_cast<uint8_t*>(reinterpret_cast<uintptr_t>(p) + shift)))
             return true;
     }
     return true;
 }
 
+// A function whose first instructions another mod's hook replaced (see jumppatch.h).
+static uint8_t* FindBehindHook(const char* pattern, void* module)
+{
+    std::vector<int> bytes = ParsePattern(pattern);
+    uint8_t* text;
+    size_t size;
+    uintptr_t shift = 0;
+    if (!module && g_copy) {
+        text = const_cast<uint8_t*>(g_copy);
+        size = g_copySize;
+        shift = reinterpret_cast<uintptr_t>(g_real) - reinterpret_cast<uintptr_t>(g_copy);
+    } else if (!TextSection(module, text, size)) {
+        return nullptr;
+    }
+    if (bytes.empty())
+        return nullptr;
+    uint8_t* p = jumppatch::FindBehindHook(text, size, bytes.data(), bytes.size());
+    if (!p)
+        return nullptr;
+    return reinterpret_cast<uint8_t*>(reinterpret_cast<uintptr_t>(p) + shift);
+}
+
 uint8_t* FindUnique(const char* pattern, void* module)
 {
+    // Under the Greeneye Loader: the code as it was before the loader's hooks, so a reloaded
+    // Quick Deposit finds the functions it hooked the first time.
+    if (const GreeneyeHost* host = greeneye::Host(); host && !module)
+        return host->find(pattern, nullptr);
     uint8_t* found = nullptr;
     bool unique = true;
     ForEachMatch(pattern, module, [&](uint8_t* p) {
@@ -66,7 +120,14 @@ uint8_t* FindUnique(const char* pattern, void* module)
         found = p;
         return true;
     });
+    if (!found)
+        found = FindBehindHook(pattern, module);
     return unique ? found : nullptr;
+}
+
+bool IsHookPatch(const uint8_t* target)
+{
+    return jumppatch::KindOf(target) != jumppatch::None;
 }
 
 uint8_t* ResolveRipConsensus(const char* pattern, int dispOffset, int insEnd)
@@ -105,6 +166,12 @@ static void WriteAbsJump(uint8_t* at, const void* to)
 
 void* InstallHook(uint8_t* target, void* detour, size_t length)
 {
+    // Under the Greeneye Loader (API 2) the loader owns the hook (hot reload).
+    if (const GreeneyeHost* host = greeneye::Host())
+        return host->hook(target, detour, length, nullptr, 0);
+    // Another mod's jump is already here: point it at detour and call on through that mod.
+    if (IsHookPatch(target))
+        return jumppatch::Chain(target, detour);
     if (length < 12 || length > 32)
         return nullptr;
     auto tramp = static_cast<uint8_t*>(VirtualAlloc(nullptr, 64, MEM_COMMIT | MEM_RESERVE, PAGE_EXECUTE_READWRITE));
@@ -122,3 +189,56 @@ void* InstallHook(uint8_t* target, void* detour, size_t length)
     FlushInstructionCache(GetCurrentProcess(), target, length);
     return tramp;
 }
+
+// ItemInfoLookup starts with "mov [rsp+8], ecx; sub rsp, 28h; test ecx, ecx; jz short X": the
+// short jump is relocated by hand into the trampoline.
+void* InstallItemLookupHook(uint8_t* fn, void* detour)
+{
+    static const uint8_t prologue[] = {0x89, 0x4C, 0x24, 0x08, 0x48, 0x83, 0xEC, 0x28, 0x85, 0xC9, 0x74};
+    if (const GreeneyeHost* host = greeneye::Host()) {
+        // The loader appends "jump back to fn + 12" after this code: the first 10 bytes, then
+        // "jnz" over a jump to the jz target (taken when ecx was 0) to that jump back.
+        uint8_t original[12];
+        host->read(fn, original, sizeof(original));
+        if (memcmp(original, prologue, sizeof(prologue)) != 0)
+            return nullptr;
+        uint8_t* jzTarget = fn + 12 + static_cast<int8_t>(original[11]);
+        uint8_t code[26];
+        memcpy(code, original, 10);
+        code[10] = 0x75; // jnz +14 -> the loader's jump back
+        code[11] = 0x0E;
+        code[12] = 0xFF; // jmp [rip+0]; jzTarget
+        code[13] = 0x25;
+        memset(code + 14, 0, 4);
+        memcpy(code + 18, &jzTarget, 8);
+        return host->hook(fn, detour, 12, code, sizeof(code));
+    }
+    if (IsHookPatch(fn))
+        return jumppatch::Chain(fn, detour);
+    if (memcmp(fn, prologue, sizeof(prologue)) != 0)
+        return nullptr;
+    uint8_t* jzTarget = fn + 12 + static_cast<int8_t>(fn[11]);
+    auto* t = static_cast<uint8_t*>(VirtualAlloc(nullptr, 64, MEM_COMMIT | MEM_RESERVE, PAGE_EXECUTE_READWRITE));
+    if (!t)
+        return nullptr;
+    memcpy(t, fn, 10);     // up to and including test ecx, ecx
+    t[10] = 0x74;          // jz +12 -> second stub
+    t[11] = 0x0C;
+    auto absJump = [](uint8_t* at, const void* to) {
+        at[0] = 0x48; at[1] = 0xB8;
+        memcpy(at + 2, &to, 8);
+        at[10] = 0xFF; at[11] = 0xE0;
+    };
+    absJump(t + 12, fn + 12);  // fall through: rest of the original
+    absJump(t + 24, jzTarget); // taken branch
+    FlushInstructionCache(GetCurrentProcess(), t, 64);
+
+    DWORD old;
+    if (!VirtualProtect(fn, 12, PAGE_EXECUTE_READWRITE, &old))
+        return nullptr;
+    absJump(fn, detour);
+    VirtualProtect(fn, 12, old, &old);
+    FlushInstructionCache(GetCurrentProcess(), fn, 12);
+    return t;
+}
+

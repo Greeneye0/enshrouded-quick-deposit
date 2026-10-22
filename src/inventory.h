@@ -1,4 +1,5 @@
 #pragma once
+#include "../../common/greeneye.h"
 #include <cstdint>
 
 // Read-only view of the client's inventories: your backpack and the base's chests.
@@ -76,6 +77,28 @@ int KeepStorageChests(const uint32_t* magic, int magicCount, uint32_t* candidate
 
 ItemDesc Describe(uint32_t itemId);
 
+// --- inspection, for the dev bridge ---
+
+// The client registry, also outside a base: the one identified by Ready() or, before that,
+// the registry that knows playerId and holds the most entities.
+void* InspectRegistry(uint32_t playerId);
+
+// Every ECS registry seen so far (the client has several); returns how many were written.
+int Registries(void** out, int max);
+
+// Component type indices of an entity (-1: unknown entity).
+int Types(void* registry, uint32_t entity, uint16_t* out, int max);
+
+// Raw component data, or null.
+void* Data(void* registry, uint16_t type, uint32_t entity);
+
+// Non-player entities with a position within radius meters of center, nearest first.
+int EntitiesNear(void* registry, const float center[3], float radius, uint32_t* out, float* dist, int max);
+
 const char* CategoryName(uint8_t category);
+
+// Under the Greeneye Loader: keep what the hooks learned (ECS registries, item databases) in
+// memory the loader keeps over a hot reload, so a reloaded Quick Deposit knows them at once.
+void UseKept(const GreeneyeHost* host);
 
 } // namespace inv

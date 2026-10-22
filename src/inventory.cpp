@@ -16,9 +16,12 @@
 // chest type whose link ids are non-player entities that have an Inventory.
 #include <windows.h>
 #include <atomic>
+#include <span>
 #include <cctype>
+#include <cmath>
 #include <cstdio>
 #include <cstring>
+#include <utility>
 #include "inventory.h"
 #include "log.h"
 #include "scan.h"
@@ -53,14 +56,19 @@ constexpr size_t kItemDebugName = 0x820;
 constexpr uint8_t kCategoryWeapons = 2;
 
 constexpr int kMaxRegistries = 16;
-std::atomic<void*> g_seen[kMaxRegistries];
+std::atomic<void*> g_seenLocal[kMaxRegistries];
+// Under the Greeneye Loader both live in memory the loader keeps over a hot reload (UseKept).
+std::span<std::atomic<void*>> g_seen{g_seenLocal};
 constexpr int kMaxItemDbs = 8;
-std::atomic<void*> g_itemDbs[kMaxItemDbs]; // every database the game looked items up in
+std::atomic<void*> g_itemDbsLocal[kMaxItemDbs];
+std::span<std::atomic<void*>> g_itemDbs{g_itemDbsLocal}; // every database the game looked items up in
 void* g_registry = nullptr;
 
-void ViewInitHook(void* iter, void* view, uint32_t size)
+// Every detour holds a lease while it runs Quick Deposit's code (the Greeneye Loader's hot
+// reload waits for it); an older generation's detour just calls on.
+void LearnRegistry(void* iter)
 {
-    if (!g_registry) {
+    {
         void* reg = nullptr;
         __try {
             reg = *reinterpret_cast<void**>(*static_cast<uint8_t**>(iter) + 0x30);
@@ -80,13 +88,23 @@ void ViewInitHook(void* iter, void* view, uint32_t size)
             }
         }
     }
+}
+
+void ViewInitHook(void* iter, void* view, uint32_t size)
+{
+    {
+        greeneye::Lease lease;
+        if (lease && !g_registry)
+            LearnRegistry(iter);
+    }
     g_originalViewInit(iter, view, size);
 }
 
 uint8_t* ItemLookupHook(uint32_t itemId, void* itemDb)
 {
     uint8_t* info = g_originalItemLookup(itemId, itemDb);
-    if (info && itemDb) {
+    greeneye::Lease lease;
+    if (lease && info && itemDb) {
         for (auto& slot : g_itemDbs) {
             void* cur = slot.load(std::memory_order_relaxed);
             if (cur == itemDb)
@@ -99,38 +117,6 @@ uint8_t* ItemLookupHook(uint32_t itemId, void* itemDb)
         }
     }
     return info;
-}
-
-// ItemInfoLookup starts with "mov [rsp+8], ecx; sub rsp, 28h; test ecx, ecx; jz short X": the
-// short jump is relocated by hand into the trampoline.
-void* HookItemLookup(uint8_t* fn)
-{
-    static const uint8_t prologue[] = {0x89, 0x4C, 0x24, 0x08, 0x48, 0x83, 0xEC, 0x28, 0x85, 0xC9, 0x74};
-    if (memcmp(fn, prologue, sizeof(prologue)) != 0)
-        return nullptr;
-    uint8_t* jzTarget = fn + 12 + static_cast<int8_t>(fn[11]);
-    auto* t = static_cast<uint8_t*>(VirtualAlloc(nullptr, 64, MEM_COMMIT | MEM_RESERVE, PAGE_EXECUTE_READWRITE));
-    if (!t)
-        return nullptr;
-    memcpy(t, fn, 10);     // up to and including test ecx, ecx
-    t[10] = 0x74;          // jz +12 -> second stub
-    t[11] = 0x0C;
-    auto absJump = [](uint8_t* at, const void* to) {
-        at[0] = 0x48; at[1] = 0xB8;
-        memcpy(at + 2, &to, 8);
-        at[10] = 0xFF; at[11] = 0xE0;
-    };
-    absJump(t + 12, fn + 12);  // fall through: rest of the original
-    absJump(t + 24, jzTarget); // taken branch
-    FlushInstructionCache(GetCurrentProcess(), t, 64);
-
-    DWORD old;
-    if (!VirtualProtect(fn, 12, PAGE_EXECUTE_READWRITE, &old))
-        return nullptr;
-    absJump(fn, reinterpret_cast<void*>(&ItemLookupHook));
-    VirtualProtect(fn, 12, old, &old);
-    FlushInstructionCache(GetCurrentProcess(), fn, 12);
-    return t;
 }
 
 void* Component(void* registry, uint16_t type, uint32_t entity)
@@ -293,7 +279,7 @@ bool Init()
     ok &= Find(itemLookup, "ItemInfoLookup", "89 4C 24 08 48 83 EC 28 85 C9 74 ?? 48 8D 4A 38 48 8D 54 24 30 E8 ?? ?? ?? ?? 48 85 C0 74 ??");
     if (!ok)
         return false;
-    g_originalItemLookup = static_cast<ItemInfoLookupFn>(HookItemLookup(itemLookup));
+    g_originalItemLookup = static_cast<ItemInfoLookupFn>(InstallItemLookupHook(itemLookup, reinterpret_cast<void*>(&ItemLookupHook)));
     g_originalViewInit = static_cast<ViewInitFn>(InstallHook(viewInit, reinterpret_cast<void*>(&ViewInitHook), 12));
     if (!g_originalItemLookup || !g_originalViewInit) {
         Log("inventory hooks failed");
@@ -356,6 +342,30 @@ bool ReadOwner(uint32_t entity, Owner& out)
     for (int i = 0; i < kMaxPages; ++i)
         if (links[i] && links[i] != entity && ReadPage(links[i], static_cast<PageKind>(kinds[i]), out.pages[out.pageCount]))
             ++out.pageCount;
+    // A linked page can have a setup of its own: the backpack you wear adds its extra rows that
+    // way (a player with 6 backpack rows lists only 4 directly). Follow those links too, each
+    // page once.
+    for (int p = 1; p < out.pageCount && out.pageCount <= kMaxPages; ++p) {
+        auto* sub = static_cast<uint8_t*>(Component(g_registry, g_typeSetup, out.pages[p].entity));
+        if (!sub)
+            continue;
+        uint32_t subLinks[kMaxPages] = {};
+        uint8_t subKinds[kMaxPages] = {};
+        __try {
+            memcpy(subLinks, sub, sizeof(subLinks));
+            memcpy(subKinds, sub + 64, sizeof(subKinds));
+        } __except (EXCEPTION_EXECUTE_HANDLER) {
+            continue;
+        }
+        for (int i = 0; i < kMaxPages && out.pageCount <= kMaxPages; ++i) {
+            uint32_t id = subLinks[i];
+            bool known = !id;
+            for (int q = 0; q < out.pageCount && !known; ++q)
+                known = out.pages[q].entity == id;
+            if (!known && ReadPage(id, static_cast<PageKind>(subKinds[i]), out.pages[out.pageCount]))
+                ++out.pageCount;
+        }
+    }
     return out.pageCount > 0;
 }
 
@@ -381,8 +391,8 @@ bool IsHotbarPage(const Owner& player, uint32_t pageEntity)
                 continue;
             }
             // Both ids must be two distinct pages of the player: a single match can be a
-            // coincidence (an offline world matched an unrelated component this way and the
-            // deposit emptied the hotbar).
+            // coincidence (an offline world matched an unrelated component this way and tier 2
+            // emptied the hotbar).
             bool hasA = false, hasB = false;
             for (int p = 0; p < player.pageCount; ++p) {
                 uint32_t id = player.pages[p].entity;
@@ -666,6 +676,110 @@ const char* CategoryName(uint8_t category)
                                         "BuildTools", "Consumables", "Ammunition", "Materials", "Blueprints", "Currency",
                                         "Collectibles", "AnimalFood", "PetFood", "WeaponGem", "ColorPalette"};
     return category < sizeof(names) / sizeof(names[0]) ? names[category] : "?";
+}
+
+void* InspectRegistry(uint32_t playerId)
+{
+    if (g_registry)
+        return g_registry;
+    void* best = nullptr;
+    uint64_t bestCapacity = 0;
+    for (auto& slot : g_seen) {
+        void* reg = slot.load();
+        uint16_t tmp[1];
+        if (!reg || EntityTypes(reg, playerId, tmp, 1) < 0)
+            continue;
+        uint64_t capacity = 0;
+        __try {
+            capacity = *reinterpret_cast<uint64_t*>(static_cast<uint8_t*>(reg) + 0x148 + 0x10);
+        } __except (EXCEPTION_EXECUTE_HANDLER) {
+            continue;
+        }
+        if (capacity > bestCapacity) {
+            best = reg;
+            bestCapacity = capacity;
+        }
+    }
+    return best;
+}
+
+int Registries(void** out, int max)
+{
+    int n = 0;
+    for (auto& slot : g_seen)
+        if (void* reg = slot.load(); reg && n < max)
+            out[n++] = reg;
+    return n;
+}
+
+int Types(void* registry, uint32_t entity, uint16_t* out, int max)
+{
+    return registry ? EntityTypes(registry, entity, out, max) : -1;
+}
+
+void* Data(void* registry, uint16_t type, uint32_t entity)
+{
+    return registry ? Component(registry, type, entity) : nullptr;
+}
+
+int EntitiesNear(void* registry, const float center[3], float radius, uint32_t* out, float* dist, int max)
+{
+    if (!registry || max <= 0)
+        return 0;
+    // Same entity table walk as FindContainers.
+    auto* reg = static_cast<uint8_t*>(registry);
+    uint8_t* map = reg + 0x148;
+    int n = 0;
+    __try {
+        uint64_t capacity = *reinterpret_cast<uint64_t*>(map + 0x10);
+        auto* used = *reinterpret_cast<uint64_t**>(map + 0x08);
+        auto* ids = *reinterpret_cast<uint32_t**>(map + 0x28);
+        auto* records = *reinterpret_cast<uint8_t***>(reg + 0x188);
+        if (capacity > (1u << 22))
+            return 0;
+        for (uint64_t i = 0; i < capacity; ++i) {
+            if (!(used[i >> 6] >> (i & 63) & 1))
+                continue;
+            uint8_t* rec = records[i];
+            uint32_t id = ids[i];
+            if (!rec || id < kFirstNonPlayerId)
+                continue;
+            auto* bits = *reinterpret_cast<uint64_t**>(rec + 0x18);
+            if (!(bits[kTypePosition >> 6] >> (kTypePosition & 63) & 1))
+                continue;
+            auto* pos = static_cast<int64_t*>(Component(registry, kTypePosition, id));
+            if (!pos)
+                continue;
+            float dx = pos[0] / 4294967296.0f - center[0], dy = pos[1] / 4294967296.0f - center[1],
+                  dz = pos[2] / 4294967296.0f - center[2];
+            float d = std::sqrt(dx * dx + dy * dy + dz * dz);
+            if (d > radius)
+                continue;
+            // keep the nearest max, sorted: append (or replace the farthest), then bubble down
+            int at;
+            if (n < max)
+                at = n++;
+            else if (d < dist[max - 1])
+                at = max - 1;
+            else
+                continue;
+            out[at] = id;
+            dist[at] = d;
+            for (; at > 0 && dist[at - 1] > dist[at]; --at) {
+                std::swap(out[at], out[at - 1]);
+                std::swap(dist[at], dist[at - 1]);
+            }
+        }
+    } __except (EXCEPTION_EXECUTE_HANDLER) {
+        Log("inspect: entity table walk failed");
+    }
+    return n;
+}
+
+void UseKept(const GreeneyeHost* host)
+{
+    g_seen = {static_cast<std::atomic<void*>*>(host->keep("quick-deposit.registries", sizeof(g_seenLocal))), kMaxRegistries};
+    g_itemDbs = {static_cast<std::atomic<void*>*>(host->keep("quick-deposit.itemdbs", sizeof(g_itemDbsLocal))), kMaxItemDbs};
 }
 
 } // namespace inv

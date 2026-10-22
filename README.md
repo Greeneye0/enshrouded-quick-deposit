@@ -6,7 +6,7 @@ Open your inventory inside your base and press **G twice**. Everything in your b
 into the chest where it belongs, and your chat tells you where it went. One G is still the
 game's own Sort Inventory.
 
-No mod loader, nothing to configure, works on dedicated servers and friends' worlds. Only you
+Nothing to configure, works on dedicated servers and friends' worlds. Only you
 need it installed.
 
 <p align="center"><img src="docs/images/chat-report-sorted.png" alt="Chat report after a deposit" width="420"></p>
@@ -27,7 +27,7 @@ need it installed.
 
 Your chat then shows where everything went, using your chest names ("Wands: Wand Epic Fire
 x1"; unnamed chests are called after what they mostly hold), and `quick-deposit-report.txt`
-in the game folder has the full report. Those chat lines exist only on your screen; nothing
+in `greeneye\quick-deposit\` has the full report. Those chat lines exist only on your screen; nothing
 is sent to other players.
 
 Every move is a normal transfer that the host checks and performs, exactly as if you had
@@ -49,18 +49,25 @@ dragged the item yourself.
 ## Install
 
 1. Close Enshrouded.
-2. Download `QuickDeposit-1.1.1.zip` from [Releases](../../releases/latest) or
+2. Download `QuickDeposit-1.2.0.zip` from [Releases](../../releases/latest) or
    [Nexus Mods](https://www.nexusmods.com/enshrouded/mods/195).
 3. In Steam: right-click Enshrouded > Manage > Browse local files.
-4. Copy `powrprof.dll` from the zip into that folder, next to `enshrouded.exe`.
+4. Copy everything from the zip into that folder, keeping the folders: `dbgcore.dll` (the
+   Greeneye Loader) next to `enshrouded.exe`, and `greeneye\quick-deposit\`.
 5. Start the game.
 
-Works next to EML, Shroudtopia and Auto Loot Plus. Uninstall: delete `powrprof.dll` (and
-`quick-deposit.ini` / `.log` / `-report.txt` if you like).
+Updating from 1.1 or older: delete `powrprof.dll`; your `quick-deposit.ini` moves to
+`greeneye\quick-deposit\` on the first start. The same DLL still works on its own when renamed
+to `powrprof.dll` and put next to `enshrouded.exe`, without the loader.
+
+Works next to EML, Shroudtopia, Auto Loot Plus and Creative Mode. Uninstall: delete
+`greeneye\quick-deposit\`, and `dbgcore.dll` with the `greeneye` folder if no other Greeneye
+mod is left.
 
 ## Settings (`quick-deposit.ini`)
 
-Created on first start in the game folder; edit it while the game is closed.
+Created on first start in `greeneye\quick-deposit\` (the game folder without the loader);
+edit it while the game is closed.
 
 | Key | Default | Meaning |
 |---|---|---|
@@ -68,7 +75,7 @@ Created on first start in the game folder; edit it while the game is closed.
 | `doubleSortMs` | `500` | how quickly the second G must follow; `0` turns double-G off |
 | `hotkey` | (none) | optional extra key: `F1`-`F12` or a virtual-key code such as `0x76` |
 | `delayMs` | `100` | pause between chests; raise it if chests get skipped on a laggy server |
-| `settleMs` | `1500` | wait for the server's changes before the next step and the report |
+| `settleMs` | `1500` | the longest wait for the server's changes before the next step and the report (it moves on as soon as your backpack stops changing) |
 | `tier2` | `on` | `on`, `dry` (only report the plan) or `off` (only "Deposit Stacks") |
 | `excludeChests` | (none) | chest names to skip, comma-separated (besides names starting with `--`) |
 | `tier2Categories` | `all` | what step 2 may move: `all` or a list such as `Materials,Weapons` |
@@ -79,14 +86,17 @@ Created on first start in the game folder; edit it while the game is closed.
 - The in-game "area deposit" toggle of a chest is not honored.
 - Chat lines appear under your own name, and only after the first system message of the
   session has arrived (one comes right after you join).
-- Built against game build 1269579 (release 1.0, October 2026). After a game update the mod
+- Built against game build 1273043 (hotfix 1.0.0.3, October 2026). After a game update the mod
   may stay inactive and log `signature not found`; the game runs normally.
-- Some antivirus programs distrust DLL mods in general. This one only adds the deposit and
-  forwards everything else to Windows' own `powrprof.dll`; the source is all here.
+- Some antivirus programs distrust DLL mods in general. The Greeneye Loader (`dbgcore.dll`)
+  only loads the mods in the `greeneye` folder and forwards everything else to Windows' own
+  `dbgcore.dll`; the source is all here.
 
 ## Build
 
-`build.bat` with the VS 2022 Build Tools produces `bin\powrprof.dll`.
+`build.bat` with the VS 2022 Build Tools produces `bin\loader\` (`quick-deposit.dll` and
+`mod.json` for the Greeneye Loader, `../GreeneyeLoader`) and the same DLL as the standalone
+`bin\powrprof.dll`.
 `tools\gen_proxy.py` regenerates the powrprof forwarders, and
 `tools\sigtest.bat <enshrouded.exe>` checks all signatures against a game build offline.
 

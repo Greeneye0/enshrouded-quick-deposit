@@ -5,7 +5,8 @@
 
 // Appends a timestamped line to quick-deposit.log in the game folder, and keeps the most
 // recent lines in memory for the bridge's "logs" op.
-void LogInit();
+// reload: a newer generation of the mod (hot reload) appends instead of starting the file anew.
+void LogInit(bool reload = false);
 void Log(const char* fmt, ...);
 
 struct LogLine {

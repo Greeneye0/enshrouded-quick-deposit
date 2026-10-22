@@ -48,4 +48,13 @@ const std::vector<std::string>& LastReport();
 // "Wands" for a named chest, else "Wood Logs chest".
 std::string ChestLabelFor(uint32_t chest);
 
+#ifdef QD_BRIDGE
+// Dev only: log every UI command (id and first 48 bytes) passing the dispatcher.
+void SetCommandTrace(bool on);
+// Dev only: moves the stack in one inventory slot to another (UI command 0x2c, like a drag).
+bool TransferSlot(uint32_t fromPage, int fromSlot, uint32_t toPage, int toSlot);
+// Dev only: sends a chat line to the server as if typed (UI command 0x74). UI thread only.
+bool SendChatLine(const char* text);
+#endif
+
 } // namespace client

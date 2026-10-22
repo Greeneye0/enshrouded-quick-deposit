@@ -4,13 +4,19 @@
 #include <cstring>
 #include "config.h"
 #include "inventory.h"
+#include "../../common/greeneye.h"
 
-static const char* kIniPath = ".\\quick-deposit.ini";
+// quick-deposit.ini in the data folder: the game folder standalone, greeneye\quick-deposit\ under
+// the Greeneye Loader (relative to the current folder in the hot reload runtime, as before).
+static const char* IniPath()
+{
+    return greeneye::DataPath("quick-deposit.ini");
+}
 static const char* kDefaultCategories = "all";
 
 static void WriteDefaults(const Config& c)
 {
-    FILE* f = fopen(kIniPath, "w");
+    FILE* f = fopen(IniPath(), "w");
     if (!f)
         return;
     fprintf(f,
@@ -19,7 +25,7 @@ static void WriteDefaults(const Config& c)
         "; doubleSortMs: how quickly the second G must follow (0 turns double-G off)\n"
         "; hotkey: optional extra key, F1-F12 or a virtual-key code in hex (empty = none)\n"
         "; delayMs: pause between chests (raise it if some chests get skipped on a laggy server)\n"
-        "; settleMs: wait for the server's changes before the next step and the report\n"
+        "; settleMs: the longest wait for the server's changes before the next step and the report\n"
         "; tier2: off | dry | on - leftovers to a chest holding the same kind of item\n"
         ";   (dry = only write the plan to the report, move nothing)\n"
         "; tier2Categories: all, or the item categories tier 2 may move: Equipment, Weapons,\n"
@@ -75,20 +81,20 @@ static int ClampInt(int v, int lo, int hi, int fallback)
 Config LoadConfig()
 {
     Config c;
-    if (GetFileAttributesA(kIniPath) == INVALID_FILE_ATTRIBUTES)
+    if (GetFileAttributesA(IniPath()) == INVALID_FILE_ATTRIBUTES)
         WriteDefaults(c);
 
     char buf[512];
-    c.enabled = GetPrivateProfileIntA("QuickDeposit", "enabled", 1, kIniPath) != 0;
-    GetPrivateProfileStringA("QuickDeposit", "hotkey", "", buf, sizeof(buf), kIniPath);
+    c.enabled = GetPrivateProfileIntA("QuickDeposit", "enabled", 1, IniPath()) != 0;
+    GetPrivateProfileStringA("QuickDeposit", "hotkey", "", buf, sizeof(buf), IniPath());
     c.hotkey = ParseKey(buf, c.hotkey);
-    c.doubleSortMs = ClampInt(GetPrivateProfileIntA("QuickDeposit", "doubleSortMs", c.doubleSortMs, kIniPath), 0, 2000, c.doubleSortMs);
-    c.delayMs = ClampInt(GetPrivateProfileIntA("QuickDeposit", "delayMs", c.delayMs, kIniPath), 0, 2000, c.delayMs);
-    c.settleMs = ClampInt(GetPrivateProfileIntA("QuickDeposit", "settleMs", c.settleMs, kIniPath), 200, 10000, c.settleMs);
-    GetPrivateProfileStringA("QuickDeposit", "tier2", "on", buf, sizeof(buf), kIniPath);
+    c.doubleSortMs = ClampInt(GetPrivateProfileIntA("QuickDeposit", "doubleSortMs", c.doubleSortMs, IniPath()), 0, 2000, c.doubleSortMs);
+    c.delayMs = ClampInt(GetPrivateProfileIntA("QuickDeposit", "delayMs", c.delayMs, IniPath()), 0, 2000, c.delayMs);
+    c.settleMs = ClampInt(GetPrivateProfileIntA("QuickDeposit", "settleMs", c.settleMs, IniPath()), 200, 10000, c.settleMs);
+    GetPrivateProfileStringA("QuickDeposit", "tier2", "on", buf, sizeof(buf), IniPath());
     c.tier2 = _stricmp(buf, "dry") == 0 ? Tier2Mode::DryRun : _stricmp(buf, "off") == 0 ? Tier2Mode::Off : Tier2Mode::On;
-    GetPrivateProfileStringA("QuickDeposit", "tier2Categories", kDefaultCategories, buf, sizeof(buf), kIniPath);
+    GetPrivateProfileStringA("QuickDeposit", "tier2Categories", kDefaultCategories, buf, sizeof(buf), IniPath());
     c.tier2Categories = ParseCategories(buf);
-    GetPrivateProfileStringA("QuickDeposit", "excludeChests", "", c.excludeChests, sizeof(c.excludeChests), kIniPath);
+    GetPrivateProfileStringA("QuickDeposit", "excludeChests", "", c.excludeChests, sizeof(c.excludeChests), IniPath());
     return c;
 }
