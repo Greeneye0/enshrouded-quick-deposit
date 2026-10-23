@@ -38,6 +38,7 @@
 #include "../../common/greeneye.h"
 #include "client.h"
 #include "inventory.h"
+#include "keep.h"
 #include "log.h"
 #include "scan.h"
 
@@ -82,6 +83,8 @@ constexpr size_t kCmdSourceSlot = 0x1c;
 constexpr size_t kCmdType = 0x24;
 constexpr uint32_t kFlagRefillStacks = 1;
 constexpr uint8_t kTypeTransfer = 2;
+constexpr uint8_t kTypeSplit = 3;       // move part of a stack: u16 count at +0x26 (the game's split)
+constexpr size_t kCmdSplitCount = 0x26;
 constexpr uint8_t kCategoryWeapons = 2;
 constexpr uint8_t kCategoryAmmunition = 8;
 constexpr uint8_t kCategoryEquipment = 1;
@@ -120,6 +123,7 @@ struct Move {
     int srcPage, srcSlot;
     int chest, dstPage, dstSlot;
     uint32_t itemId, count;
+    bool part; // only count of the stack (the rest is kept)
     Reason reason;
 };
 
@@ -371,6 +375,56 @@ bool AnyChestHolds(uint32_t itemId)
     return false;
 }
 
+// Whether a chest that gets "Deposit Stacks" holds the item (so tier 1 takes it).
+bool AnyTier1ChestHolds(uint32_t itemId)
+{
+    for (int i = 0; i < g_run.tier1Count; ++i)
+        if (CountOf(g_run.chestsMid[g_run.tier1[i]], itemId))
+            return true;
+    return false;
+}
+
+// Whether the chest holds an item type you keep that is in your backpack's storage rows:
+// "Deposit Stacks" would take it, so that chest gets single moves instead.
+bool HoldsKeptItem(const inv::Owner& backpack, const inv::Owner& chest)
+{
+    for (int p = 0; p < backpack.pageCount; ++p) {
+        const inv::Page& page = backpack.pages[p];
+        if (!IsStoragePage(page) || inv::IsHotbarPage(backpack, page.entity))
+            continue;
+        for (const auto& st : page.slots)
+            if (keep::IsKept(st.itemId) && CountOf(chest, st.itemId))
+                return true;
+    }
+    return false;
+}
+
+// What the keep marks hold in the backpack's storage rows, as counts per item.
+int KeptTotals(const inv::Owner& backpack, uint32_t* ids, uint64_t* counts, int max)
+{
+    static keep::Plan plan;
+    keep::PlanFor(backpack, plan);
+    int n = 0;
+    for (int p = 0; p < backpack.pageCount; ++p) {
+        for (int s = 0; s < inv::kSlotsPerPage; ++s) {
+            const inv::Stack& st = backpack.pages[p].slots[s];
+            if (!plan.keep[p][s])
+                continue;
+            int k = 0;
+            while (k < n && ids[k] != st.itemId)
+                ++k;
+            if (k == n) {
+                if (n == max)
+                    continue;
+                ids[n] = st.itemId;
+                counts[n++] = 0;
+            }
+            counts[k] += plan.keep[p][s];
+        }
+    }
+    return n;
+}
+
 // A fingerprint of the backpack, to see when the host's changes have arrived.
 uint64_t BackpackSig(uint32_t playerId)
 {
@@ -439,6 +493,13 @@ bool Start(void* cl, std::string& why)
         r.backpackBefore.pageCount = 0;
     Log("deposit: %d chests in this base; inventories %s (%d of %d chests visible)", r.chestCount,
         readable ? "readable" : "not readable", visible, r.chestCount);
+    // Kept items need the contents: "Deposit Stacks" into every chest would take them along.
+    if (keep::Any() && !r.chestsVisible) {
+        why = "inventories not readable yet, and you keep marked items";
+        Log("deposit: %s - nothing sent", why.c_str());
+        chat::Post("Quick Deposit: can't read the chests yet, so nothing was deposited (you keep marked items). Try again in a moment.");
+        return false;
+    }
     // Every page of the player: its InventoryCategory, filled slots, and whether it counts as
     // storage. Items on pages that are not storage are never deposited.
     {
@@ -460,10 +521,17 @@ bool Start(void* cl, std::string& why)
 
     // Tier 1 only where it can do something: chests holding an item you carry (all of them
     // when the contents can't be read).
+    // Chests holding a kept item you carry are left out: their stacks go there one by one.
     r.tier1Count = 0;
-    for (int c = 0; c < r.chestCount; ++c)
-        if (!r.chestsVisible || SharesItem(r.backpackBefore, r.chestsBefore[c]))
-            r.tier1[r.tier1Count++] = c;
+    for (int c = 0; c < r.chestCount; ++c) {
+        if (r.chestsVisible && !SharesItem(r.backpackBefore, r.chestsBefore[c]))
+            continue;
+        if (r.chestsVisible && HoldsKeptItem(r.backpackBefore, r.chestsBefore[c])) {
+            Log("deposit: chest %u holds a kept item - single moves instead of Deposit Stacks", r.chests[c]);
+            continue;
+        }
+        r.tier1[r.tier1Count++] = c;
+    }
     r.tier1Pending = r.tier1Count > 0;
     r.pass = 0;
     if (g_cfg.tier2 == Tier2Mode::On && r.backpackBefore.pageCount && r.chestsVisible)
@@ -633,6 +701,9 @@ void PlanTier2(bool onlyNew)
     r.next = first;
     r.passFirst = first;
     ++r.pass;
+    // What stays in the backpack is this pass's to say (an earlier pass listed the same stacks).
+    r.notesLen = 0;
+    r.notes[0] = 0;
     if (!inv::ReadOwner(r.playerId, r.backpackMid))
         return;
     for (int i = 0; i < r.chestCount; ++i)
@@ -654,6 +725,8 @@ void PlanTier2(bool onlyNew)
                       (pos[2] - me[2]) * (pos[2] - me[2]);
     }
 
+    static keep::Plan kept;
+    keep::PlanFor(r.backpackMid, kept);
     int seen = 0;
     for (int p = 0; p < r.backpackMid.pageCount; ++p) {
         const inv::Page& page = r.backpackMid.pages[p];
@@ -664,12 +737,19 @@ void PlanTier2(bool onlyNew)
             if (!st.itemId)
                 continue;
             ++seen;
+            const uint32_t keepCount = kept.keep[p][s];
+            if (keepCount >= st.count)
+                continue; // you keep it
             inv::ItemDesc d = inv::Describe(st.itemId);
             if (!d.known)
                 Log("deposit: pass %d: item %u has no item info, left in the backpack", r.pass, st.itemId);
-            if (!d.known || !(g_cfg.tier2Categories & (1u << d.category)))
+            // Stacks whose chest was left out of tier 1 (it holds a kept item) move here
+            // whatever tier2Categories says: Deposit Stacks would have taken them.
+            bool tier1Home = AnyTier1ChestHolds(st.itemId);
+            bool homeSkipped = !tier1Home && AnyChestHolds(st.itemId);
+            if (!d.known || (!homeSkipped && !(g_cfg.tier2Categories & (1u << d.category))))
                 continue; // stays with you by design (category not enabled)
-            if (onlyNew && AnyChestHolds(st.itemId))
+            if (onlyNew && tier1Home)
                 continue;
 
             // Among chests with a free slot: 1. one holding this exact item (the best of them),
@@ -734,7 +814,7 @@ void PlanTier2(bool onlyNew)
                 reason = Reason::SameCategory;
             }
             if (chest < 0) {
-                Note("  %s x%u: every chest is full", d.name, st.count);
+                Note("  %s x%u: every chest is full", d.name, st.count - keepCount);
                 continue;
             }
             if (r.moveCount == kMaxMoves)
@@ -747,7 +827,8 @@ void PlanTier2(bool onlyNew)
             m.srcSlot = s;
             m.chest = chest;
             m.itemId = st.itemId;
-            m.count = st.count;
+            m.count = st.count - keepCount;
+            m.part = keepCount > 0;
             m.reason = reason;
         }
     }
@@ -765,6 +846,10 @@ void StepTier2(void* cl, ULONGLONG now)
     At<uint32_t>(cmd, kCmdSourceSlot) = r.backpackMid.pages[m.srcPage].entity;
     cmd[kCmdSourceSlot + 4] = static_cast<uint8_t>(m.srcSlot);
     cmd[kCmdType] = kTypeTransfer;
+    if (m.part) {
+        cmd[kCmdType] = kTypeSplit;
+        At<uint16_t>(cmd, kCmdSplitCount) = static_cast<uint16_t>(m.count > 0xffff ? 0xffff : m.count);
+    }
     Send(cl, cmd);
     r.nextTime = now + g_cfg.delayMs;
     if (++r.next == r.moveCount) {
@@ -890,6 +975,25 @@ void WriteReport()
         rep.Line("Nothing was deposited.");
         chat::Post("Quick Deposit: nothing to deposit");
     }
+    {
+        // What stayed because you keep it.
+        uint32_t ids[64];
+        uint64_t counts[64];
+        int n = KeptTotals(after, ids, counts, 64);
+        char line[220];
+        int len = _snprintf_s(line, _TRUNCATE, "Kept (marked):");
+        for (int i = 0; i < n && len > 0 && len < 200; ++i) {
+            int w = _snprintf_s(line + len, sizeof(line) - len, _TRUNCATE, "%s %s x%llu", i ? "," : "",
+                                inv::Describe(ids[i]).name, static_cast<unsigned long long>(counts[i]));
+            len = w < 0 ? 200 : len + w;
+        }
+        if (n) {
+            rep.Line("%s", line);
+            char chatLine[240];
+            _snprintf_s(chatLine, _TRUNCATE, "Quick Deposit: %s", line);
+            chat::Post(chatLine);
+        }
+    }
 
     if (g_cfg.tier2 == Tier2Mode::DryRun && r.moveCount) {
         rep.Line("Tier 2 plan (dry run - nothing moved; set tier2=on in quick-deposit.ini to do it):");
@@ -932,10 +1036,50 @@ void WriteReport()
         fclose(rep.f);
 }
 
+extern Config g_baseCfg;
+
+// Shows the keep marks your backpack, four times a second.
+void UpdateBackpackPages()
+{
+    static ULONGLONG last = 0;
+    ULONGLONG now = GetTickCount64();
+    if (now - last < 250)
+        return;
+    last = now;
+    static inv::Owner me;
+    static ULONGLONG lastIdentify = 0;
+    uint32_t handle = g_client && At<void*>(g_client, kClientWorld) ? At<uint32_t>(g_client, kClientPlayer) : 0;
+    uint32_t playerId = handle ? (handle & 0x3f) + 1 : 0;
+    if (playerId && !inv::ReadOwner(playerId, me) && now - lastIdentify >= 5000) {
+        // After a game start nothing has identified the client registry yet (a deposit does):
+        // the way a deposit does in a base (a chest tells the registries apart), else by the
+        // registry where your own pages have inventories.
+        lastIdentify = now;
+        BaseScan scan;
+        std::string why;
+        if (!ScanBase(g_client, g_baseCfg, scan, why) || !scan.readable)
+            inv::Ready(playerId, playerId);
+        inv::ReadOwner(playerId, me);
+    }
+    if (!playerId)
+        me.pageCount = 0;
+    keep::SetBackpack(me);
+}
+
 void Tick(void* app)
 {
     g_client = ClientFromApp(app);
     chat::SetClient(g_client);
+    // Another world (a server, back to your own): its inventories live in other registries.
+    static void* lastWorld = nullptr;
+    void* world = g_client ? At<void*>(g_client, kClientWorld) : nullptr;
+    if (world != lastWorld) {
+        if (lastWorld)
+            inv::Forget();
+        lastWorld = world;
+    }
+    UpdateBackpackPages();
+    keep::Tick();
     if (g_requested.exchange(false)) {
         if (g_run.phase != Phase::Idle) {
             Log("deposit: still busy with the last one");
@@ -1207,6 +1351,14 @@ bool TransferSlot(uint32_t fromPage, int fromSlot, uint32_t toPage, int toSlot)
     cmd[kCmdType] = kTypeTransfer;
     Send(g_client, cmd);
     Log("transfer: page %u slot %d -> page %u slot %d (bridge)", fromPage, fromSlot, toPage, toSlot);
+    return true;
+}
+
+bool SendRawCommand(const uint8_t* cmd)
+{
+    if (!g_client || !g_originalDispatch)
+        return false;
+    Send(g_client, cmd);
     return true;
 }
 

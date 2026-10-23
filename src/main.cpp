@@ -4,6 +4,8 @@
 #include "client.h"
 #include "config.h"
 #include "inventory.h"
+#include "hints.h"
+#include "keep.h"
 #include "log.h"
 #include "../../common/greeneye.h"
 #ifdef QD_BRIDGE
@@ -11,7 +13,7 @@
 namespace bridge_ops { void Register(); }
 #endif
 
-#define QD_VERSION "1.2.0"
+#define QD_VERSION "1.3.0"
 
 bool LoadProxyTargets();
 
@@ -71,6 +73,11 @@ static void StartMod()
         return;
     }
     client::SetConfig(g_config);
+    keep::Load(g_config.keepItems, g_config.keepKey);
+    bool keepShown = keep::Init();
+    if (!keepShown)
+        Log("keep marks: kept items from quick-deposit.ini still stay, but are not shown");
+    hints::Init(g_config.doubleSortMs > 0, keepShown ? g_config.keepKey : 0);
 #ifdef QD_BRIDGE
     bridge_ops::Register();
     bridge::Start(QD_VERSION "-dev");

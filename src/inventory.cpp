@@ -776,6 +776,18 @@ int EntitiesNear(void* registry, const float center[3], float radius, uint32_t* 
     return n;
 }
 
+void Forget()
+{
+    if (!g_registry && !g_seen[0].load())
+        return;
+    g_registry = nullptr;
+    g_typeSetup = 0;
+    g_typeHotbar = 0;
+    for (auto& slot : g_seen)
+        slot.store(nullptr);
+    Log("left the world: client registry forgotten");
+}
+
 void UseKept(const GreeneyeHost* host)
 {
     g_seen = {static_cast<std::atomic<void*>*>(host->keep("quick-deposit.registries", sizeof(g_seenLocal))), kMaxRegistries};

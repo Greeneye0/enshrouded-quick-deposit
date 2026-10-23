@@ -55,6 +55,8 @@ void SetCommandTrace(bool on);
 bool TransferSlot(uint32_t fromPage, int fromSlot, uint32_t toPage, int toSlot);
 // Dev only: sends a chat line to the server as if typed (UI command 0x74). UI thread only.
 bool SendChatLine(const char* text);
+// Dev only: sends a raw 0x28-byte UI command (experiments with the transfer command's fields).
+bool SendRawCommand(const uint8_t* cmd);
 #endif
 
 } // namespace client

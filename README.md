@@ -33,11 +33,26 @@ is sent to other players.
 Every move is a normal transfer that the host checks and performs, exactly as if you had
 dragged the item yourself.
 
+## Keeping items in your backpack
+
+Hover a stack in your inventory and press **K**: Quick Deposit keeps that many of the item in
+your backpack, and the stack gets a teal border. K on more stacks of the same item adds them;
+K on a marked stack takes it off again. To keep part of a stack, split it first (Ctrl + mouse)
+and mark the part you want to keep.
+
+The kept amount survives sorting: when G merges your stacks, a deposit splits off just the
+rest. Your chat ends with what stayed ("Kept (marked): Straw x50"). The hint bar at the bottom
+shows **K Keep in Backpack** and **G Twice: Quick Deposit**.
+
+Marks are saved in `quick-deposit.ini` (`keepItems=Straw x50,Torch`; a name without an amount
+keeps every one).
+
 ## What is never moved
 
 <img src="docs/images/backpack-after.png" alt="Backpack emptied, hotbar kept" width="300" align="right">
 
 - Your hotbar (both rows), equipped gear, cosmetics and currency.
+- What you marked with K.
 - Categories left out of `tier2Categories` (default: none - everything in the backpack grid
   is sorted; your hotbar is what you keep).
 - Crafting stations: only storage chests are used.
@@ -49,7 +64,7 @@ dragged the item yourself.
 ## Install
 
 1. Close Enshrouded.
-2. Download `QuickDeposit-1.2.0.zip` from [Releases](../../releases/latest) or
+2. Download `QuickDeposit-1.3.0.zip` from [Releases](../../releases/latest) or
    [Nexus Mods](https://www.nexusmods.com/enshrouded/mods/195).
 3. In Steam: right-click Enshrouded > Manage > Browse local files.
 4. Copy everything from the zip into that folder, keeping the folders: `dbgcore.dll` (the
@@ -79,6 +94,8 @@ edit it while the game is closed.
 | `tier2` | `on` | `on`, `dry` (only report the plan) or `off` (only "Deposit Stacks") |
 | `excludeChests` | (none) | chest names to skip, comma-separated (besides names starting with `--`) |
 | `tier2Categories` | `all` | what step 2 may move: `all` or a list such as `Materials,Weapons` |
+| `keepKey` | `K` | over a stack in your inventory: keep it in the backpack; a letter, `F1`-`F12` or a key code; empty turns it off |
+| `keepItems` | (none) | what K marked, e.g. `Straw x50,Torch` (no amount: every one) |
 
 ## Limits
 
@@ -88,6 +105,8 @@ edit it while the game is closed.
   session has arrived (one comes right after you join).
 - Built against game build 1273043 (hotfix 1.0.0.3, October 2026). After a game update the mod
   may stay inactive and log `signature not found`; the game runs normally.
+- Bug reports: please attach `greeneye\quick-deposit\quick-deposit.log`,
+  `quick-deposit-report.txt` from the same folder, and `greeneye\loader.log`.
 - Some antivirus programs distrust DLL mods in general. The Greeneye Loader (`dbgcore.dll`)
   only loads the mods in the `greeneye` folder and forwards everything else to Windows' own
   `dbgcore.dll`; the source is all here.

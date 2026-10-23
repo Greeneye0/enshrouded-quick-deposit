@@ -14,6 +14,8 @@ struct Config
     Tier2Mode tier2 = Tier2Mode::On;
     uint32_t tier2Categories = 0; // bit per keen::ItemCategory, set by LoadConfig
     char excludeChests[256] = ""; // comma-separated chest names the mod never touches
+    int keepKey = 'K';            // over an item in the inventory: keep its type in the backpack
+    char keepItems[2048] = "";    // comma-separated kept item names (written by keepKey)
 };
 
 // Reads quick-deposit.ini from the data folder (greeneye\quick-deposit\ under the Greeneye

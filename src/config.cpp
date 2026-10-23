@@ -2,6 +2,7 @@
 #include <cstdio>
 #include <cstdlib>
 #include <cstring>
+#include <cctype>
 #include "config.h"
 #include "inventory.h"
 #include "../../common/greeneye.h"
@@ -33,6 +34,10 @@ static void WriteDefaults(const Config& c)
         ";   Blueprints, Collectibles, AnimalFood, PetFood, WeaponGem\n"
         "; Chests whose name starts with -- are never used. excludeChests: more chest names the mod\n"
         ";   never uses, comma-separated (e.g. My Stuff)\n"
+        "; keepKey: hover an item in your inventory and press it to keep that kind of item in the\n"
+        ";   backpack (teal border); press it again to unmark. A letter, F1-F12 or a key code in hex\n"
+        ";   (empty = off)\n"
+        "; keepItems: the kept items, comma-separated (keepKey writes it, e.g. Health Potion,Torch)\n"
         "[QuickDeposit]\n"
         "enabled=1\n"
         "doubleSortMs=%d\n"
@@ -41,7 +46,9 @@ static void WriteDefaults(const Config& c)
         "settleMs=%d\n"
         "tier2=on\n"
         "tier2Categories=%s\n"
-        "excludeChests=\n",
+        "excludeChests=\n"
+        "keepKey=K\n"
+        "keepItems=\n",
         c.doubleSortMs, c.delayMs, c.settleMs, kDefaultCategories);
     fclose(f);
 }
@@ -53,6 +60,8 @@ static int ParseKey(const char* s, int fallback)
         if (n >= 1 && n <= 12)
             return VK_F1 + n - 1;
     }
+    if (isalnum(static_cast<unsigned char>(s[0])) && !s[1])
+        return toupper(static_cast<unsigned char>(s[0]));
     char* end = nullptr;
     long v = strtol(s, &end, 0);
     return (end != s && v > 0 && v < 256) ? static_cast<int>(v) : fallback;
@@ -96,5 +105,9 @@ Config LoadConfig()
     GetPrivateProfileStringA("QuickDeposit", "tier2Categories", kDefaultCategories, buf, sizeof(buf), IniPath());
     c.tier2Categories = ParseCategories(buf);
     GetPrivateProfileStringA("QuickDeposit", "excludeChests", "", c.excludeChests, sizeof(c.excludeChests), IniPath());
+    // Older ini files lack keepKey: K, as written for new ones.
+    GetPrivateProfileStringA("QuickDeposit", "keepKey", "K", buf, sizeof(buf), IniPath());
+    c.keepKey = buf[0] ? ParseKey(buf, 0) : 0;
+    GetPrivateProfileStringA("QuickDeposit", "keepItems", "", c.keepItems, sizeof(c.keepItems), IniPath());
     return c;
 }

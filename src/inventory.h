@@ -77,6 +77,10 @@ int KeepStorageChests(const uint32_t* magic, int magicCount, uint32_t* candidate
 
 ItemDesc Describe(uint32_t itemId);
 
+// You left the world: forget its registries, so the next world's are learned and identified
+// afresh (game thread).
+void Forget();
+
 // --- inspection, for the dev bridge ---
 
 // The client registry, also outside a base: the one identified by Ready() or, before that,
