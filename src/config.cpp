@@ -82,6 +82,23 @@ static uint32_t ParseCategories(const char* list)
     return mask;
 }
 
+// The list a test build before 1.0.1 wrote as its default (no BuildTools, Tools, Instrument or
+// FishingRod, so roof tiles stayed in the backpack). Players who ran it never chose it.
+static bool IsOldTestDefault(const char* list)
+{
+    static const char* const old = "Materials,Weapons,Equipment,Ammunition,Consumables,Collectibles,Blueprints,AnimalFood,PetFood,WeaponGem";
+    const char* o = old;
+    for (const char* p = list;; ++p) {
+        if (*p == ' ')
+            continue;
+        if (tolower(static_cast<unsigned char>(*p)) != tolower(static_cast<unsigned char>(*o)))
+            return false;
+        if (!*p)
+            return true;
+        ++o;
+    }
+}
+
 static int ClampInt(int v, int lo, int hi, int fallback)
 {
     return (v >= lo && v <= hi) ? v : fallback;
@@ -103,6 +120,10 @@ Config LoadConfig()
     GetPrivateProfileStringA("QuickDeposit", "tier2", "on", buf, sizeof(buf), IniPath());
     c.tier2 = _stricmp(buf, "dry") == 0 ? Tier2Mode::DryRun : _stricmp(buf, "off") == 0 ? Tier2Mode::Off : Tier2Mode::On;
     GetPrivateProfileStringA("QuickDeposit", "tier2Categories", kDefaultCategories, buf, sizeof(buf), IniPath());
+    if (IsOldTestDefault(buf)) {
+        WritePrivateProfileStringA("QuickDeposit", "tier2Categories", kDefaultCategories, IniPath());
+        strcpy_s(buf, kDefaultCategories);
+    }
     c.tier2Categories = ParseCategories(buf);
     GetPrivateProfileStringA("QuickDeposit", "excludeChests", "", c.excludeChests, sizeof(c.excludeChests), IniPath());
     // Older ini files lack keepKey: K, as written for new ones.
