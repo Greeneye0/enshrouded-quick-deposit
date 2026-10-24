@@ -459,8 +459,10 @@ bool ToggleStack(uint32_t itemId, uint32_t count, uint32_t keptHere, uint64_t ke
     uint32_t kept = 0; // what the mark keeps now
     for (const KeptSlot& k : g_keptSlots)
         kept += k.itemId == itemId ? k.amount : 0;
-    if (mark >= 0 && g_marks[mark].amount != kAll && g_marks[mark].amount > kept)
-        kept = g_marks[mark].amount; // more than the backpack holds right now
+    // Adding keeps a mark's amount beyond what the backpack holds right now; unmarking counts
+    // only what is kept here, so K on every kept stack always ends the mark.
+    if (!keptHere && mark >= 0 && g_marks[mark].amount != kAll && g_marks[mark].amount > kept)
+        kept = g_marks[mark].amount;
     uint32_t amount = keptHere ? kept - (keptHere < kept ? keptHere : kept) : kept + count;
     char line[128];
     if (!amount) {
