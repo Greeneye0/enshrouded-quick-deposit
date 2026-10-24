@@ -41,6 +41,8 @@ struct ItemDesc {
     uint16_t maxStack;
     char name[64];  // readable: "Wand Epic Fire"
     char raw[96];   // internal: "Weapon_T1_1H_WandEpic_01_Fire"
+    char shown[96]; // as the game shows it, in its language ("Raw Wolf Meat"); else name. For
+                    // chat and reports only: chest matching and keep marks use name and raw.
 };
 
 // Hooks ViewInit (to learn the client's ECS registry) and the item lookup (to learn the item
@@ -80,6 +82,10 @@ int FindPlainChests(const float lo[3], const float hi[3], uint32_t* out, int max
 int KeepStorageChests(const uint32_t* magic, int magicCount, uint32_t* candidates, int n);
 
 ItemDesc Describe(uint32_t itemId);
+
+// Looks up the shown names Describe() could not yet (they need the UI being built): call it
+// from code that runs while the game builds its UI.
+void ResolveNames();
 
 // You left the world: forget its registries, so the next world's are learned and identified
 // afresh (game thread).

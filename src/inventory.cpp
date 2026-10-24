@@ -22,6 +22,10 @@
 #include <cstdio>
 #include <cstring>
 #include <utility>
+#include <algorithm>
+#include <vector>
+#include <unordered_map>
+#include <string>
 #include "inventory.h"
 #include "log.h"
 #include "scan.h"
@@ -53,6 +57,7 @@ constexpr size_t kItemWeaponType = 0xd0;
 constexpr size_t kItemAmmoType = 0xcd;
 constexpr size_t kItemMaxStack = 0x14;
 constexpr size_t kItemDebugName = 0x820;
+constexpr size_t kItemName = 0x48; // 16-byte text key of the name the game shows
 constexpr uint8_t kCategoryWeapons = 2;
 
 constexpr int kMaxRegistries = 16;
@@ -181,6 +186,51 @@ uint16_t DetectSetupType(void* registry, uint32_t chest)
     return best;
 }
 
+// The game's localized text lookup: key = fnv1a32 of a 16-byte text key. Its text type is
+// {utf8, length, fnv1a64 of the text}. It reads the loca tables through a UI pointer the game
+// sets only while it builds the UI (*root + 0xd0), so a lookup outside that (a deposit runs
+// before) is queued and done in the next UI frame (ResolveNames); names are cached.
+struct GameText {
+    const char* utf8;
+    size_t len;
+    uint64_t hash;
+};
+using LocaTextFn = GameText* (*)(GameText* out, uint32_t key);
+LocaTextFn g_locaText = nullptr;
+void** g_locaRoot = nullptr; // the UI pointer the lookup reads; null: not found, never called
+SRWLOCK g_namesLock = SRWLOCK_INIT;
+std::unordered_map<uint32_t, std::string> g_shownNames; // item id -> name as shown ("": none)
+std::vector<uint32_t> g_wantedNames;
+std::atomic<bool> g_anyWanted{false};
+
+bool LocaUsable()
+{
+    __try {
+        return g_locaText && g_locaRoot && *g_locaRoot && *reinterpret_cast<void**>(static_cast<uint8_t*>(*g_locaRoot) + 0xd0);
+    } __except (EXCEPTION_EXECUTE_HANDLER) {
+        return false;
+    }
+}
+
+// The item's name as the game shows it, looked up now (LocaUsable() first), or "".
+bool LookupShown(const uint8_t* info, char* out, size_t size)
+{
+    uint32_t key = 0x811c9dc5u;
+    GameText t{"", 0, 0xcbf29ce484222325ull};
+    __try {
+        for (size_t i = 0; i < 16; ++i)
+            key = (key ^ info[kItemName + i]) * 0x1000193u;
+        g_locaText(&t, key);
+        if (!t.utf8 || !t.len || t.len >= size)
+            return false;
+        memcpy(out, t.utf8, t.len);
+        out[t.len] = 0;
+    } __except (EXCEPTION_EXECUTE_HANDLER) {
+        return false;
+    }
+    return true;
+}
+
 uint8_t* LookupItemIn(uint32_t itemId, void* db)
 {
     __try {
@@ -283,6 +333,24 @@ bool Init()
     ok &= Find(itemLookup, "ItemInfoLookup", "89 4C 24 08 48 83 EC 28 85 C9 74 ?? 48 8D 4A 38 48 8D 54 24 30 E8 ?? ?? ?? ?? 48 85 C0 74 ??");
     if (!ok)
         return false;
+    // Optional: item names as the game shows them. Creative Mode hooks the text lookup; Quick
+    // Deposit only calls it, so it is also found by the code after its first 18 bytes.
+    g_locaText = reinterpret_cast<LocaTextFn>(FindUnique("48 89 5C 24 10 48 89 74 24 18 55 57 41 55 41 56 41 57 48 8D AC 24 F0 F8 FF FF"));
+    if (!g_locaText) {
+        uint8_t* after = FindUnique("48 8D AC 24 F0 F8 FF FF 48 81 EC 10 08 00 00 4C 8B F1 48 C7 85 F0 00 00 00 40 00 00 00");
+        if (after && IsHookPatch(after - 18))
+            g_locaText = reinterpret_cast<LocaTextFn>(after - 18);
+    }
+    // In it: mov rax, [rip + root]; mov [rbp + 0xe8], rdi; mov rcx, [rax + 0xd0]
+    if (g_locaText) {
+        static const uint8_t tail[] = {0x48, 0x89, 0xBD, 0xE8, 0x00, 0x00, 0x00, 0x48, 0x8B, 0x88, 0xD0, 0x00, 0x00, 0x00};
+        auto* f = reinterpret_cast<uint8_t*>(g_locaText);
+        for (int i = 0; i < 0x100 && !g_locaRoot; ++i)
+            if (f[i] == 0x48 && f[i + 1] == 0x8B && f[i + 2] == 0x05 && memcmp(f + i + 7, tail, sizeof(tail)) == 0)
+                g_locaRoot = reinterpret_cast<void**>(f + i + 7 + *reinterpret_cast<int32_t*>(f + i + 3));
+    }
+    if (!g_locaText || !g_locaRoot)
+        Log("signature not found: LocaText - chat shows internal item names");
     g_originalItemLookup = static_cast<ItemInfoLookupFn>(InstallItemLookupHook(itemLookup, reinterpret_cast<void*>(&ItemLookupHook)));
     // ViewInit itself stays as it is (XHL's Area Harvest disassembles it and backs out when it
     // starts with a hook): only these client systems' calls to it go through ViewInitHook. Each
@@ -702,6 +770,7 @@ ItemDesc Describe(uint32_t itemId)
 {
     ItemDesc d = {};
     wsprintfA(d.name, "item %u", itemId);
+    memcpy(d.shown, d.name, sizeof(d.name));
     uint8_t* info = LookupItem(itemId);
     if (!info)
         return d;
@@ -728,7 +797,41 @@ ItemDesc Describe(uint32_t itemId)
         }
     } __except (EXCEPTION_EXECUTE_HANDLER) {
     }
+    memcpy(d.shown, d.name, sizeof(d.name));
+    AcquireSRWLockExclusive(&g_namesLock);
+    auto it = g_shownNames.find(itemId);
+    if (it != g_shownNames.end()) {
+        if (!it->second.empty())
+            strncpy_s(d.shown, it->second.c_str(), _TRUNCATE);
+    } else if (LocaUsable()) {
+        char shown[sizeof(d.shown)];
+        bool ok = LookupShown(info, shown, sizeof(shown));
+        g_shownNames[itemId] = ok ? shown : "";
+        if (ok)
+            memcpy(d.shown, shown, sizeof(shown));
+    } else if (g_locaRoot && g_wantedNames.size() < 4096 &&
+               std::find(g_wantedNames.begin(), g_wantedNames.end(), itemId) == g_wantedNames.end()) {
+        g_wantedNames.push_back(itemId);
+        g_anyWanted = true;
+    }
+    ReleaseSRWLockExclusive(&g_namesLock);
     return d;
+}
+
+void ResolveNames()
+{
+    if (!g_anyWanted || !LocaUsable())
+        return;
+    AcquireSRWLockExclusive(&g_namesLock);
+    for (int n = 0; n < 64 && !g_wantedNames.empty(); ++n) {
+        uint32_t id = g_wantedNames.back();
+        g_wantedNames.pop_back();
+        char shown[96];
+        uint8_t* info = LookupItem(id);
+        g_shownNames[id] = info && LookupShown(info, shown, sizeof(shown)) ? shown : "";
+    }
+    g_anyWanted = !g_wantedNames.empty();
+    ReleaseSRWLockExclusive(&g_namesLock);
 }
 
 const char* CategoryName(uint8_t category)

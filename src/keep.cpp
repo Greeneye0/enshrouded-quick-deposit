@@ -118,6 +118,8 @@ void DrawKeepBorder(void* widget, const float* rect)
 void DrawRealHook(void* widget, const float* rect, uint32_t id, uint64_t colour)
 {
     greeneye::Lease lease;
+    if (lease)
+        inv::ResolveNames(); // the UI is being built: item names can be looked up
     if (!lease || !g_slotItem || g_slotBackground || !rect) {
         g_originalDrawReal(widget, rect, id, colour);
         return;
@@ -455,6 +457,8 @@ bool ToggleStack(uint32_t itemId, uint32_t count, uint32_t keptHere, uint64_t ke
     char name[64];
     if (!*NameOf(itemId, name, sizeof(name)) || !count)
         return false;
+    inv::ItemDesc desc = inv::Describe(itemId);
+    const char* shown = desc.shown; // chat: the name as the game shows it
     int mark = MarkOf(itemId);
     uint32_t kept = 0; // what the mark keeps now
     for (const KeptSlot& k : g_keptSlots)
@@ -468,7 +472,7 @@ bool ToggleStack(uint32_t itemId, uint32_t count, uint32_t keptHere, uint64_t ke
     if (!amount) {
         if (mark >= 0)
             g_marks.erase(g_marks.begin() + mark);
-        _snprintf_s(line, _TRUNCATE, "Quick Deposit: no longer keeping %s", name);
+        _snprintf_s(line, _TRUNCATE, "Quick Deposit: no longer keeping %s", shown);
     } else {
         if (mark < 0) {
             g_marks.push_back({name, amount});
@@ -479,7 +483,7 @@ bool ToggleStack(uint32_t itemId, uint32_t count, uint32_t keptHere, uint64_t ke
         m.prefer.erase(std::remove(m.prefer.begin(), m.prefer.end(), key), m.prefer.end());
         if (!keptHere)
             m.prefer.push_back(key);
-        _snprintf_s(line, _TRUNCATE, "Quick Deposit: keeping %u %s", amount, name);
+        _snprintf_s(line, _TRUNCATE, "Quick Deposit: keeping %u %s", amount, shown);
     }
     g_cache.clear();
     SaveNames();
@@ -494,18 +498,20 @@ bool Toggle(uint32_t itemId, uint32_t count)
     char name[64];
     if (!*NameOf(itemId, name, sizeof(name)))
         return false;
+    inv::ItemDesc desc = inv::Describe(itemId);
+    const char* shown = desc.shown; // chat: the name as the game shows it
     int mark = MarkOf(itemId);
     char line[128];
     if (mark >= 0) {
         g_marks.erase(g_marks.begin() + mark);
-        _snprintf_s(line, _TRUNCATE, "Quick Deposit: no longer keeping %s", name);
+        _snprintf_s(line, _TRUNCATE, "Quick Deposit: no longer keeping %s", shown);
     } else {
         uint32_t amount = count ? count : kAll;
         g_marks.push_back({name, amount});
         if (amount == kAll)
-            _snprintf_s(line, _TRUNCATE, "Quick Deposit: keeping every %s", name);
+            _snprintf_s(line, _TRUNCATE, "Quick Deposit: keeping every %s", shown);
         else
-            _snprintf_s(line, _TRUNCATE, "Quick Deposit: keeping %u %s", amount, name);
+            _snprintf_s(line, _TRUNCATE, "Quick Deposit: keeping %u %s", amount, shown);
     }
     g_cache.clear();
     SaveNames();

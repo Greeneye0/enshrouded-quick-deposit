@@ -244,7 +244,7 @@ void ChestLabel(int index, const inv::Owner& o, char* out, size_t size)
     if (best < 0)
         _snprintf_s(out, size, _TRUNCATE, "empty chest %d", index + 1);
     else
-        _snprintf_s(out, size, _TRUNCATE, "%s chest", inv::Describe(ids[best]).name);
+        _snprintf_s(out, size, _TRUNCATE, "%s chest", inv::Describe(ids[best]).shown);
 }
 
 // True if name is one of the comma-separated names in list (case and outer spaces ignored).
@@ -822,7 +822,7 @@ void PlanTier2(bool onlyNew)
                 reason = Reason::SameCategory;
             }
             if (chest < 0) {
-                Note("  %s x%u: every chest is full", d.name, st.count - keepCount);
+                Note("  %s x%u: every chest is full", d.shown, st.count - keepCount);
                 continue;
             }
             if (r.moveCount == kMaxMoves)
@@ -953,7 +953,7 @@ void WriteReport()
                     header = true;
                 }
                 inv::ItemDesc item = inv::Describe(ids[i]);
-                const char* name = item.name;
+                const char* name = item.shown;
                 unsigned long long added = mine;
                 rep.Line("  + %s x%llu", name, added);
                 if (chatLen > 0 && chatLen < 200) {
@@ -974,7 +974,7 @@ void WriteReport()
         for (int i = 0; i < n; ++i) {
             uint64_t now = CountOf(after, ids[i]);
             if (now < counts[i]) {
-                rep.Line("  deposited %s x%llu", inv::Describe(ids[i]).name, static_cast<unsigned long long>(counts[i] - now));
+                rep.Line("  deposited %s x%llu", inv::Describe(ids[i]).shown, static_cast<unsigned long long>(counts[i] - now));
                 ++lines;
             }
         }
@@ -992,7 +992,7 @@ void WriteReport()
         int len = _snprintf_s(line, _TRUNCATE, "Kept (marked):");
         for (int i = 0; i < n && len > 0 && len < 200; ++i) {
             int w = _snprintf_s(line + len, sizeof(line) - len, _TRUNCATE, "%s %s x%llu", i ? "," : "",
-                                inv::Describe(ids[i]).name, static_cast<unsigned long long>(counts[i]));
+                                inv::Describe(ids[i]).shown, static_cast<unsigned long long>(counts[i]));
             len = w < 0 ? 200 : len + w;
         }
         if (n) {
@@ -1010,7 +1010,7 @@ void WriteReport()
             char label[160];
             ChestLabel(m.chest, r.chestsBefore[m.chest], label, sizeof(label));
             inv::ItemDesc d = inv::Describe(m.itemId);
-            rep.Line("  %s x%u -> %s, page %u slot %d (%s)", d.name, m.count, label,
+            rep.Line("  %s x%u -> %s, page %u slot %d (%s)", d.shown, m.count, label,
                      r.chestsMid[m.chest].pages[m.dstPage].entity, m.dstSlot, ReasonText(m.reason));
         }
     }
@@ -1026,7 +1026,7 @@ void WriteReport()
             bool arrived = inv::ReadOwner(r.chests[m.chest], now) &&
                            CountOf(now, m.itemId) > CountOf(r.chestsBefore[m.chest], m.itemId);
             inv::ItemDesc item = inv::Describe(m.itemId);
-            const char* name = item.name;
+            const char* name = item.shown;
             rep.Line("  %s -> %s (%s): %s", name, label,
                      ReasonText(m.reason), arrived ? "done" : "did NOT move");
             if (!arrived) {
