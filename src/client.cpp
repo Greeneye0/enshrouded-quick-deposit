@@ -591,14 +591,22 @@ bool IsSeedling(const inv::ItemDesc& d)
     return _strnicmp(d.raw, "Seedling", 8) == 0 || _strnicmp(d.name, "Seedling", 8) == 0;
 }
 
+// The game's building category also holds what it shows as Tools: pickaxes, rakes, the watering
+// can ("Tool_...") and NPCs' summoning staffs ("NPC_..."). They go with tools, not with blocks.
+bool IsTool(const inv::ItemDesc& d)
+{
+    return _strnicmp(d.raw, "Tool_", 5) == 0 || _strnicmp(d.raw, "NPC_", 4) == 0 ||
+           _strnicmp(d.raw, "NpcSummoner", 11) == 0;
+}
+
 // Same category; weapons also need the same weapon type, ammunition the same kind of ammo
-// (arrows, spells, fishing bait), equipment the same group (armor, rings, shields...), and
-// seedlings go only with seedlings.
+// (arrows, spells, fishing bait), equipment the same group (armor, rings, shields...),
+// seedlings go only with seedlings and tools only with tools.
 bool SameKind(const inv::ItemDesc& a, const inv::ItemDesc& b)
 {
     if (!a.known || !b.known || a.category != b.category)
         return false;
-    if (IsSeedling(a) != IsSeedling(b))
+    if (IsSeedling(a) != IsSeedling(b) || IsTool(a) != IsTool(b))
         return false;
     if (a.category == kCategoryWeapons)
         return memcmp(a.weaponType, b.weaponType, sizeof(a.weaponType)) == 0;
