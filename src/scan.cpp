@@ -2,6 +2,7 @@
 #include <cstring>
 #include <vector>
 #include "scan.h"
+#include "log.h"
 #include "../../common/jumppatch.h"
 #include "../../common/greeneye.h"
 
@@ -242,3 +243,111 @@ void* InstallItemLookupHook(uint8_t* fn, void* detour)
     return t;
 }
 
+
+void* RedirectCall(uint8_t* call, void* detour)
+{
+    if (const GreeneyeHost* host = greeneye::Host())
+        return host->redirectCall(call, detour);
+    return jumppatch::RedirectCall(call, detour);
+}
+
+// The start of the function that contains code (one of its chunks), from the exe's unwind
+// table: chained chunks lead back to the function's first chunk.
+uint8_t* FunctionStart(const uint8_t* code)
+{
+    DWORD64 image = 0;
+    const RUNTIME_FUNCTION* fn = RtlLookupFunctionEntry(reinterpret_cast<DWORD64>(code), &image, nullptr);
+    for (int guard = 0; fn && guard < 16; ++guard) {
+        auto* unwind = reinterpret_cast<const uint8_t*>(image + fn->UnwindInfoAddress);
+        if (!(unwind[0] >> 3 & 0x4)) // UNW_FLAG_CHAININFO
+            return reinterpret_cast<uint8_t*>(image + fn->BeginAddress);
+        uint8_t codes = unwind[2];
+        size_t at = 4 + ((codes + 1) & ~1u) * 2; // the chained RUNTIME_FUNCTION after the codes
+        fn = reinterpret_cast<const RUNTIME_FUNCTION*>(unwind + at);
+    }
+    return nullptr;
+}
+
+int CallsTo(const uint8_t* target, uint8_t** out, int max)
+{
+    uint8_t* text;
+    size_t size;
+    if (!TextSection(nullptr, text, size) || size < 5)
+        return 0;
+    std::vector<uint8_t> code(size); // as it was before the loader's hooks
+    if (const GreeneyeHost* host = greeneye::Host())
+        host->read(text, code.data(), size);
+    else
+        memcpy(code.data(), text, size);
+    int n = 0;
+    for (size_t i = 0; i + 5 <= size && n < max; ++i) {
+        if (code[i] != 0xE8)
+            continue;
+        int32_t d;
+        memcpy(&d, &code[i + 1], 4);
+        if (text + i + 5 + d == target)
+            out[n++] = text + i;
+    }
+    return n;
+}
+uint8_t* SystemFunction(const char* name)
+{
+    auto base = reinterpret_cast<uint8_t*>(GetModuleHandleW(nullptr));
+    auto nt = reinterpret_cast<IMAGE_NT_HEADERS*>(base + reinterpret_cast<IMAGE_DOS_HEADER*>(base)->e_lfanew);
+    uint8_t* text;
+    size_t textSize;
+    if (!TextSection(nullptr, text, textSize))
+        return nullptr;
+    const size_t n = strlen(name), image = nt->OptionalHeader.SizeOfImage;
+    uint8_t* found = nullptr;
+    auto sec = IMAGE_FIRST_SECTION(nt);
+    for (unsigned s = 0; s < nt->FileHeader.NumberOfSections; ++s, ++sec) {
+        if (memcmp(sec->Name, ".rdata", 6) != 0)
+            continue;
+        for (size_t off = 0; off + 0x18 <= sec->Misc.VirtualSize; off += 8) {
+            uint8_t* p = base + sec->VirtualAddress + off;
+            const char* str;
+            uint64_t length;
+            uint8_t* fn;
+            memcpy(&length, p + 8, 8);
+            if (length != n)
+                continue;
+            memcpy(&str, p, 8);
+            auto at = reinterpret_cast<uintptr_t>(str), from = reinterpret_cast<uintptr_t>(base);
+            if (at < from || at - from > image - n || memcmp(str, name, n) != 0)
+                continue;
+            memcpy(&fn, p + 0x10, 8);
+            if (fn < text || fn >= text + textSize)
+                continue;
+            if (found && found != fn)
+                return nullptr;
+            found = fn;
+        }
+    }
+    return found;
+}
+
+void* RedirectSystemCalls(const uint8_t* target, const char* const* names, int count, void* detour,
+                          int& calls, int& systems)
+{
+    calls = systems = 0;
+    std::vector<uint8_t*> fns;
+    for (int i = 0; i < count; ++i)
+        if (uint8_t* fn = SystemFunction(names[i])) fns.push_back(fn);
+        else Log("system not found: %s", names[i]);
+    systems = static_cast<int>(fns.size());
+    std::vector<uint8_t*> all(4096);
+    int found = CallsTo(target, all.data(), static_cast<int>(all.size())), redirected = 0;
+    void* original = nullptr;
+    for (int i = 0; i < found; ++i) {
+        uint8_t* fn = FunctionStart(all[i]);
+        bool mine = false;
+        for (uint8_t* f : fns) mine |= f == fn;
+        if (!mine) continue;
+        ++calls;
+        void* previous = RedirectCall(all[i], detour);
+        if (previous && !original) original = previous;
+        redirected += previous != nullptr;
+    }
+    return calls > 0 && redirected == calls ? original : nullptr;
+}

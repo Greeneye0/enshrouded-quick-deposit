@@ -280,7 +280,15 @@ bool Init()
     if (!ok)
         return false;
     g_originalItemLookup = static_cast<ItemInfoLookupFn>(InstallItemLookupHook(itemLookup, reinterpret_cast<void*>(&ItemLookupHook)));
-    g_originalViewInit = static_cast<ViewInitFn>(InstallHook(viewInit, reinterpret_cast<void*>(&ViewInitHook), 12));
+    // ViewInit itself stays as it is (XHL's Area Harvest disassembles it and backs out when it
+    // starts with a hook): only these client systems' calls to it go through ViewInitHook. Each
+    // works on the local player's or the chests' inventories, so its registry is one Quick
+    // Deposit needs.
+    static const char* const systems[] = {"client_cursor", "setup_actionbar", "local_player_ui_render_setup",
+                                          "render_collection_models", "inventory_setup", "inventory_setup_init"};
+    int calls, found;
+    g_originalViewInit = static_cast<ViewInitFn>(RedirectSystemCalls(viewInit, systems, 6, reinterpret_cast<void*>(&ViewInitHook), calls, found));
+    Log("ViewInit: %d calls redirected from %d of 6 systems", g_originalViewInit ? calls : 0, found);
     if (!g_originalItemLookup || !g_originalViewInit) {
         Log("inventory hooks failed");
         return false;
