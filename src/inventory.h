@@ -72,9 +72,10 @@ bool Position(uint32_t entity, float out[3]);
 // client's custom string store at client + 0xf0). Returns false if it has none.
 bool CustomName(void* client, uint32_t entity, char* out, size_t size);
 
-// Storage chests inside the box, matched by a plain Storage Box's component types: for a base
-// that lists no crafting-storage chests (a small flame altar). Learns the registry if needed.
-int FindPlainChests(const float lo[3], const float hi[3], uint32_t* out, int max);
+// Storage chests inside the box: every inventory there whose pages are all storage. For a base
+// that lists no crafting-storage chests (a small flame altar). Learns the registry from your
+// own pages if needed.
+int FindPlainChests(uint32_t playerId, const float lo[3], const float hi[3], uint32_t* out, int max);
 
 // Keeps only storage chests among candidates: entities with every component type that all
 // the base's magic (crafting-storage) chests share, except the magic-only ones. Crafting

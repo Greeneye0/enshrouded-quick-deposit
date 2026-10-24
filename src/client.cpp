@@ -323,7 +323,7 @@ bool ScanBase(void* cl, const Config& cfg, BaseScan& out, std::string& why)
     if (!out.magicCount) {
         // A small flame altar lists no crafting-storage chests: find the plain chests themselves.
         uint32_t found[kMaxChests];
-        int nf = inv::FindPlainChests(&At<float>(out.base, kBaseMin), &At<float>(out.base, kBaseMax), found, kMaxChests);
+        int nf = inv::FindPlainChests(out.playerId, &At<float>(out.base, kBaseMin), &At<float>(out.base, kBaseMax), found, kMaxChests);
         out.chests.assign(found, found + nf);
         out.readable = nf > 0 && inv::Ready(out.playerId, out.chests[0]);
     } else {

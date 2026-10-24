@@ -13,7 +13,7 @@
 namespace bridge_ops { void Register(); }
 #endif
 
-#define QD_VERSION "1.3.6"
+#define QD_VERSION "1.3.7"
 
 bool LoadProxyTargets();
 

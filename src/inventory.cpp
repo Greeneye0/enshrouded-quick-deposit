@@ -562,37 +562,45 @@ int FindContainers(const float lo[3], const float hi[3], uint32_t* out, int max)
     return n;
 }
 
-int FindPlainChests(const float lo[3], const float hi[3], uint32_t* out, int max)
+int FindPlainChests(uint32_t playerId, const float lo[3], const float hi[3], uint32_t* out, int max)
 {
-    // Every component type of a placed Storage Box (build 1269579); workbenches, altars and
-    // other stations lack some of them. Chest kinds that lack one are left out, never a station.
-    static const uint16_t kPlainChest[] = {19,  55,  82,  83,  104, 105, 133, 144, 154, 277, 279, 285, 286,
-                                           288, 410, 413, 445, 469, 493, 516, 523, 552, 581, 601, 610};
-    constexpr int kNeed = static_cast<int>(sizeof(kPlainChest) / sizeof(kPlainChest[0]));
-    int n = 0, scanned = 0;
-    if (g_registry) {
-        n = WalkEntities(g_registry, kPlainChest, kNeed, lo, hi, out, max, scanned);
-    } else {
+    // Without a chest to tell the registries apart, your own pages do: only the client registry
+    // holds their inventories.
+    if (!g_registry || !g_typeSetup) {
         for (auto& slot : g_seen) {
             void* reg = slot.load();
-            if (!reg)
+            uint16_t tmp[1];
+            if (!reg || EntityTypes(reg, playerId, tmp, 1) < 0)
                 continue;
-            n = WalkEntities(reg, kPlainChest, kNeed, lo, hi, out, max, scanned);
-            uint16_t setup = n ? DetectSetupType(reg, out[0]) : 0;
-            if (!setup) {
-                n = 0;
-                continue;
+            if (uint16_t setup = DetectSetupType(reg, playerId)) {
+                g_registry = reg;
+                g_typeSetup = setup;
+                Log("client registry %p (by your own pages), InventorySetup type %u, %d item databases", reg, setup,
+                    ItemDbCount());
+                break;
             }
-            g_registry = reg;
-            g_typeSetup = setup;
-            Log("client registry %p (from a plain chest), InventorySetup type %u, %d item databases", reg, setup,
-                ItemDbCount());
-            break;
         }
+    }
+    // Every inventory owner in the box whose pages are all storage: equipment, customization or
+    // currency pages mean a player, an NPC or a mannequin. (Component type numbers change between
+    // game sessions, so chests are not matched by their component types.)
+    uint32_t found[512];
+    int nf = FindContainers(lo, hi, found, max < 512 ? max : 512);
+    int n = 0;
+    for (int i = 0; i < nf; ++i) {
+        Owner o;
+        if (!ReadOwner(found[i], o))
+            continue;
+        bool storage = true;
+        for (int p = 0; p < o.pageCount && storage; ++p)
+            storage = o.pages[p].kind != PageKind::Equipment && o.pages[p].kind != PageKind::Customization &&
+                      o.pages[p].kind != PageKind::Currency;
+        if (storage)
+            out[n++] = found[i];
     }
     static int lastN = -1;
     if (n != lastN)
-        Log("containers: %d plain storage chests in a base that lists none (%d entities checked)", n, scanned);
+        Log("containers: %d storage chests in a base that lists none (%d inventories)", n, nf);
     lastN = n;
     return n;
 }
