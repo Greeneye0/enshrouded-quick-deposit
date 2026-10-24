@@ -161,10 +161,14 @@ uint16_t DetectSetupType(void* registry, uint32_t chest)
         auto* data = static_cast<uint32_t*>(Component(registry, types[i], chest));
         if (!data)
             continue;
+        // Page links with a valid page kind (+64), the chest's own page included: a one-page
+        // chest's setup links only to itself, and another component that merely holds a
+        // neighbouring chest's id (no kinds) must not win.
         int score = 0;
         __try {
+            const auto* kinds = reinterpret_cast<const uint8_t*>(data) + 64;
             for (int k = 0; k < kMaxPages; ++k)
-                if (data[k] >= kFirstNonPlayerId && data[k] != chest && Component(registry, g_typeInventory, data[k]))
+                if (data[k] >= kFirstNonPlayerId && kinds[k] >= 1 && kinds[k] <= 5 && Component(registry, g_typeInventory, data[k]))
                     ++score;
         } __except (EXCEPTION_EXECUTE_HANDLER) {
             score = 0;
