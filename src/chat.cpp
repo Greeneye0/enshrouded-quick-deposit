@@ -4,9 +4,11 @@
 #include <deque>
 #include <mutex>
 #include <cstdio>
+#include <cstring>
 #include "chat.h"
 #include "../../common/greeneye.h"
 #include "arealoot.h"
+#include "host.h"
 #include "log.h"
 #include "scan.h"
 
@@ -21,12 +23,17 @@ std::atomic<void*> g_client{nullptr};
 constexpr size_t kClientChat = 0xf8;
 constexpr uint8_t kTypePlayerText = 0; // measured: a typed message arrives as type 0
 
-// Sender fields of this client, copied from the first system line in its chat.
+constexpr uint8_t kTypeHidden = 255;  // mods' protocol lines, drawn by no chat window
+
+// Sender fields of this client and the line type of system notices ("Player X joined."), copied
+// from the first system line in its chat.
 std::atomic<bool> g_haveSender{false};
 uint32_t g_senderC = 0;
 uint64_t g_senderD = 0;
 uint64_t g_lastTime = 0;
-uint64_t* g_persist = nullptr; // hot reload: {haveSender, c, d, lastTime}, kept by the loader
+uint8_t g_systemType = 0;       // 0: none seen yet (lines go out as typed text)
+uint64_t* g_persist = nullptr; // hot reload: {haveSender, c, d, lastTime, systemType}, kept by the loader
+Mode g_mode = Mode::Full;
 
 #ifdef QD_BRIDGE
 // Dev only (the bridge's area-loot experiments): a "/loot ..." line arriving at the host's chat
@@ -105,8 +112,14 @@ bool ChatAppendOwn(uint8_t* result, void* store, uint8_t type, uint64_t* text, u
         if (mine && time && (time[1] & 0xFF))
             g_lastTime = time[0];
         // System lines (type != 0) carry this client's own sender fields; typed lines may come
-        // from other players, so they are never used.
-        if (mine && d && type != kTypePlayerText && !g_haveSender.load()) {
+        // from other players, so they are never used. Hidden lines (255) are no notices.
+        if (mine && d && type != kTypePlayerText && type != kTypeHidden && !g_systemType) {
+            g_senderC = c;
+            g_senderD = d;
+            g_systemType = type;
+            g_haveSender = true;
+            Log("chat: ready (sender %u/%llX, notices are type %u)", c, static_cast<unsigned long long>(d), type);
+        } else if (mine && d && type != kTypePlayerText && !g_haveSender.load()) {
             g_senderC = c;
             g_senderD = d;
             g_haveSender = true;
@@ -116,6 +129,7 @@ bool ChatAppendOwn(uint8_t* result, void* store, uint8_t type, uint64_t* text, u
             g_persist[1] = g_senderC;
             g_persist[2] = g_senderD;
             g_persist[3] = g_lastTime;
+            g_persist[4] = g_systemType;
             g_persist[0] = g_haveSender.load();
         }
     } __except (EXCEPTION_EXECUTE_HANDLER) {
@@ -123,15 +137,54 @@ bool ChatAppendOwn(uint8_t* result, void* store, uint8_t type, uint64_t* text, u
     return true;
 }
 
+// Quick Deposit's protocol lines (host.h): read in this client's own log, answered or dropped
+// on the host. 0: not one, 1: replace it with answer, 2: drop it.
+int ProtocolLine(void* store, uint8_t type, const uint64_t* text, uint32_t c, uint64_t d, char* answer, size_t capacity)
+{
+    if (type != host::kChatType || !text || !text[0] || text[1] > 0x400)
+        return 0;
+    const char* line = reinterpret_cast<const char*>(text[0]);
+    size_t length = static_cast<size_t>(text[1]);
+    if (length < 3 || strncmp(line, "/qd", 3) != 0)
+        return 0;
+    void* cl = g_client.load(std::memory_order_relaxed);
+    if (cl && store == *reinterpret_cast<void**>(static_cast<uint8_t*>(cl) + kClientChat)) {
+        host::ClientLine(line, length, c, *reinterpret_cast<uint32_t*>(static_cast<uint8_t*>(cl) + 0x466b44));
+        return 2;
+    }
+    return host::HostLine(line, length, d, answer, capacity);
+}
+
+int SafeProtocolLine(void* store, uint8_t type, const uint64_t* text, uint32_t c, uint64_t d, char* answer, size_t capacity)
+{
+    __try {
+        return ProtocolLine(store, type, text, c, d, answer, capacity);
+    } __except (EXCEPTION_EXECUTE_HANDLER) {
+        return 0;
+    }
+}
+
 uint8_t* ChatAppendHook(uint8_t* result, void* store, uint8_t type, uint64_t* text, uint32_t a, uint32_t b,
                         uint32_t c, uint64_t d, uint64_t* time)
 {
+    char answer[64] = "";
+    int protocol = 0;
     {
         // While it runs Quick Deposit's code (a hot reload waits for it); an older generation
         // just calls on.
         greeneye::Lease lease;
-        if (lease && !ChatAppendOwn(result, store, type, text, a, b, c, d, time))
+        if (lease)
+            protocol = SafeProtocolLine(store, type, text, c, d, answer, sizeof(answer));
+        if (lease && !protocol && !ChatAppendOwn(result, store, type, text, a, b, c, d, time))
             return result; // answered by a /loot host command
+    }
+    if (protocol == 2) {
+        memset(result, 0, 8);
+        return result;
+    }
+    if (protocol == 1) {
+        uint64_t replacement[2] = {reinterpret_cast<uint64_t>(answer), strlen(answer)};
+        return g_originalAppend(result, store, type, replacement, a, b, c, d, time);
     }
     return g_originalAppend(result, store, type, text, a, b, c, d, time);
 }
@@ -167,8 +220,10 @@ void UsePersistentState(uint64_t* state)
         g_senderC = static_cast<uint32_t>(state[1]);
         g_senderD = state[2];
         g_lastTime = state[3];
+        g_systemType = static_cast<uint8_t>(state[4]);
         g_haveSender = true;
-        Log("chat: ready (sender %u/%llX, kept over the reload)", g_senderC, static_cast<unsigned long long>(g_senderD));
+        Log("chat: ready (sender %u/%llX, notices are type %u, kept over the reload)", g_senderC,
+            static_cast<unsigned long long>(g_senderD), g_systemType);
     }
 }
 
@@ -177,9 +232,17 @@ void SetClient(void* client)
     g_client = client;
 }
 
-void Post(const char* text)
+void SetMode(Mode mode)
+{
+    g_mode = mode;
+}
+
+void Post(const char* text, Kind kind)
 {
     Log("chat> %s", text);
+    if (g_mode == Mode::Off || (g_mode == Mode::Full && kind == Kind::Summary) ||
+        (g_mode == Mode::Short && kind == Kind::Detail))
+        return;
     void* cl = g_client.load();
     if (!cl || !g_haveSender.load())
         return;
@@ -197,7 +260,8 @@ void Post(const char* text)
             now = g_lastTime;
         uint64_t time[2] = {now, now ? 1u : 0u};
         uint8_t result[16] = {};
-        g_originalAppend(result, store, kTypePlayerText, str, 0, 0, g_senderC, g_senderD, time);
+        g_originalAppend(result, store, g_systemType ? g_systemType : kTypePlayerText, str, 0, 0, g_senderC, g_senderD,
+                         time);
     } __except (EXCEPTION_EXECUTE_HANDLER) {
         Log("chat: posting failed");
     }

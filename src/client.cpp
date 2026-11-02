@@ -4,25 +4,26 @@
 // F7 runs as a small state machine on the client's per-frame UI loop, so nothing ever blocks
 // a frame:
 //   1. snapshot your backpack and the base's chests
-//   2. one burst: tier 2 moves for the stacks no chest holds (each into a free slot of the
-//      chest holding the most items of the same kind...), then tier 1, "Deposit Stacks", into
+//   2. tier 2 moves for the stacks no chest holds (each into a free slot of the
+//      chest holding the most different items of the same kind...), then tier 1, "Deposit Stacks", into
 //      the chests that hold something you carry
 //   3. wait until the backpack stops changing, then plan again for what is left (stacks that
 //      did not fit in tier 1, anything that arrived meanwhile) and send that
 //   4. write a report of what went into which chest
 //
-// 140845600 UiCommandLoop(app): runs every frame; client = *(*(app + 0x35280) + 0x1b8).
+// 140845600 UiCommandLoop(app): runs every frame; client = *(*(app + 0x352a0) + 0x1b8).
 // 140851530 UiDispatch(client, cmd): command 0x2c becomes a TransferItemToInventoryEvent,
 //           which the client sends to the host as an InventoryTransferAction.
 // Layouts confirmed in game (build 1269579):
 //   client + 0x47d4e0 -> client world; client + 0x466b44 local player handle,
-//   player id = (handle & 0x3f) + 1; world + 0x2c08 local player position (int64 x, y, z);
-//   world + 0x2c58 base permission object; world + 0x3eb8 -> base registry.
+//   player id = (handle & 0x3f) + 1; world + 0x2c18 local player position (int64 x, y, z);
+//   world + 0x2c68 base permission object; world + 0x3ec8 -> base registry.
 //   "Deposit Stacks": cmd 0x2c, flag index 1 (RefillStacks) on, target = chest, source = player.
 //   Move one stack:  cmd 0x2c, no flag, target slot = (page entity, index) at +0x10,
 //                    source slot = (page entity, index) at +0x1c.
 //   Both use type 2 at +0x24.
 #include <windows.h>
+#include <algorithm>
 #include <atomic>
 #include <cctype>
 #include <cstdarg>
@@ -30,20 +31,29 @@
 #include <cstdio>
 #include <cstring>
 #include <string>
+#include <tuple>
 #include <vector>
 #ifdef QD_BRIDGE
 #include "bridge.h"
+#include "../dev/altar_upgrade.h"
 #endif
+#include "character.h"
 #include "chat.h"
 #include "../../common/greeneye.h"
 #include "client.h"
 #include "inventory.h"
+#include "glow.h"
+#include "host.h"
 #include "keep.h"
+#include "lang.h"
+#include "match.h"
 #include "log.h"
 #include "scan.h"
 
 namespace client {
 namespace {
+
+using namespace match;
 
 using UiCommandLoopFn = void (*)(void* app);
 using UiDispatchFn = void (*)(void* client, uint8_t* cmd);
@@ -51,17 +61,19 @@ using UiDispatchFn = void (*)(void* client, uint8_t* cmd);
 UiCommandLoopFn g_originalLoop = nullptr;
 UiDispatchFn g_originalDispatch = nullptr;
 std::atomic<bool> g_requested{false};
+std::atomic<bool> g_requestSorted{false}; // the request came with G twice, which sorts the backpack
 Config g_pending;
 Config g_cfg;
 bool g_broken = false;
 
-constexpr size_t kAppUi = 0x35280;
+constexpr size_t kAppUi = 0x352a0;
 constexpr size_t kUiClient = 0x1b8;
 constexpr size_t kClientWorld = 0x47d4e0;
 constexpr size_t kClientPlayer = 0x466b44;
-constexpr size_t kWorldPlayerPos = 0x2c08;
-constexpr size_t kWorldPermissions = 0x2c58;
-constexpr size_t kWorldBases = 0x3eb8;
+size_t g_textChatAllowed = 0; // client flag: the server allows text chat (0: not found)
+constexpr size_t kWorldPlayerPos = 0x2c18;
+constexpr size_t kWorldPermissions = 0x2c68;
+constexpr size_t kWorldBases = 0x3ec8;
 
 constexpr size_t kRegPermissions = 0x10;
 constexpr size_t kRegBaseCount = 0x24;
@@ -85,16 +97,14 @@ constexpr uint32_t kFlagRefillStacks = 1;
 constexpr uint8_t kTypeTransfer = 2;
 constexpr uint8_t kTypeSplit = 3;       // move part of a stack: u16 count at +0x26 (the game's split)
 constexpr size_t kCmdSplitCount = 0x26;
-constexpr uint8_t kCategoryWeapons = 2;
-constexpr uint8_t kCategoryAmmunition = 8;
-constexpr uint8_t kCategoryEquipment = 1;
 
 constexpr float kFixedToMeters = 1.0f / 4294967296.0f;
-constexpr int kMaxChests = 64;
+constexpr int kMaxChests = 256;
+constexpr int kMaxContainers = 2048; // a base's containers: animals, NPCs and crafting stations too
 constexpr int kMaxMoves = 128;
 // Tier 2 runs again after its moves settle while it still finds stacks to move: a snapshot
 // can miss a stack that arrived or changed during the deposit (it took a second G G before).
-constexpr int kMaxTier2Passes = 3;
+constexpr int kMaxPasses = 6; // the first pass and its retries
 
 template <class T> T& At(void* base, size_t offset)
 {
@@ -103,7 +113,7 @@ template <class T> T& At(void* base, size_t offset)
 
 // --- state --------------------------------------------------------------------------------
 
-enum class Phase { Idle, Tier1, Tier2, Settle2 };
+enum class Phase { Idle, Whole, Tier1, Tier2, Settle2 };
 
 // Why a stack went to its chest, in order of preference.
 enum class Reason { SameItem, SameKind, SameCategory, ChestName, Nearest };
@@ -123,6 +133,7 @@ struct Move {
     int srcPage, srcSlot;
     int chest, dstPage, dstSlot;
     uint32_t itemId, count;
+    uint32_t srcCount, srcFull; // the source stack as this move expects it, and before any move
     bool part; // only count of the stack (the rest is kept)
     Reason reason;
 };
@@ -142,6 +153,8 @@ struct Run {
     int tier1Count = 0;
     bool tier1Pending = false;
     bool sentThisPass = false;
+    bool retryWaited = false; // the pause before the next retry pass is over
+    ULONGLONG wholeAt = 0;    // when the whole-base deposit was asked for (0: answered)
     // Settling: done once the backpack changed and then stayed the same for a moment.
     ULONGLONG settleStart = 0, lastChange = 0;
     uint64_t lastSig = 0;
@@ -154,7 +167,26 @@ struct Run {
     bool chestsVisible = false;
     char notes[4096];
     int notesLen = 0;
+    // Stacks that stay because every chest for them is full (the last pass's say, as notes).
+    uint32_t noRoomIds[64];
+    uint64_t noRoomCounts[64];
+    int noRoomCount = 0;
 } g_run;
+
+// A stack stays for want of room: added up per item, for the report's chat line.
+void NoRoom(uint32_t itemId, uint64_t count)
+{
+    Run& r = g_run;
+    for (int i = 0; i < r.noRoomCount; ++i)
+        if (r.noRoomIds[i] == itemId) {
+            r.noRoomCounts[i] += count;
+            return;
+        }
+    if (r.noRoomCount < 64) {
+        r.noRoomIds[r.noRoomCount] = itemId;
+        r.noRoomCounts[r.noRoomCount++] = count;
+    }
+}
 
 void Note(const char* fmt, ...)
 {
@@ -230,7 +262,8 @@ uint64_t CountOf(const inv::Owner& o, uint32_t itemId)
 void* g_client = nullptr; // client object of the current frame (UI thread only)
 
 // What you call the chest in game, else what it mostly holds: "Wood Logs chest".
-void ChestLabel(int index, const inv::Owner& o, char* out, size_t size)
+// chat: in the mod's language (lang.h); else English, for the report and the log.
+void ChestLabel(int index, const inv::Owner& o, char* out, size_t size, bool chat = false)
 {
     if (inv::CustomName(g_client, o.entity, out, size))
         return;
@@ -242,9 +275,9 @@ void ChestLabel(int index, const inv::Owner& o, char* out, size_t size)
         if (best < 0 || counts[i] > counts[best])
             best = i;
     if (best < 0)
-        _snprintf_s(out, size, _TRUNCATE, "empty chest %d", index + 1);
+        _snprintf_s(out, size, _TRUNCATE, chat ? lang::T(lang::Str::EmptyChest) : "empty chest %d", index + 1);
     else
-        _snprintf_s(out, size, _TRUNCATE, "%s chest", inv::Describe(ids[best]).shown);
+        _snprintf_s(out, size, _TRUNCATE, chat ? lang::T(lang::Str::ChestOf) : "%s chest", inv::Describe(ids[best]).shown);
 }
 
 // True if name is one of the comma-separated names in list (case and outer spaces ignored).
@@ -315,10 +348,22 @@ bool ScanBase(void* cl, const Config& cfg, BaseScan& out, std::string& why)
     }
     auto* ids = At<uint32_t*>(out.base, kBaseChests);
     uint64_t n = At<uint64_t>(out.base, kBaseChestCount);
-    for (uint64_t i = 0; ids && i < n && out.chests.size() < kMaxChests; ++i)
-        if (ids[i])
-            out.chests.push_back(ids[i]);
+    int notChests = 0;
+    for (uint64_t i = 0; ids && i < n && out.chests.size() < kMaxChests; ++i) {
+        if (!ids[i])
+            continue;
+        // The registry is known once a chest of the list was read; before, take the list as it is.
+        if (inv::Ready(out.playerId, ids[i]) && !inv::IsStorageProp(ids[i])) {
+            ++notChests;
+            continue;
+        }
+        out.chests.push_back(ids[i]);
+    }
     out.magicCount = static_cast<int>(out.chests.size());
+    static int lastNotChests = -1;
+    if (notChests != lastNotChests)
+        Log("containers: %d entries of the base's chest list are no storage chests, skipped", notChests);
+    lastNotChests = notChests;
 
     if (!out.magicCount) {
         // A small flame altar lists no crafting-storage chests: find the plain chests themselves.
@@ -330,9 +375,14 @@ bool ScanBase(void* cl, const Config& cfg, BaseScan& out, std::string& why)
         out.readable = inv::Ready(out.playerId, out.chests[0]);
     }
     if (out.readable && out.magicCount) {
-        uint32_t found[kMaxChests];
-        int nf = inv::FindContainers(&At<float>(out.base, kBaseMin), &At<float>(out.base, kBaseMax), found, kMaxChests);
+        static thread_local uint32_t found[kMaxContainers];
+        int nf = inv::FindContainers(&At<float>(out.base, kBaseMin), &At<float>(out.base, kBaseMax), found, kMaxContainers);
         nf = inv::KeepStorageChests(out.chests.data(), out.magicCount, found, nf);
+        int props = 0;
+        for (int i = 0; i < nf; ++i)
+            if (inv::IsStorageProp(found[i]))
+                found[props++] = found[i];
+        nf = props;
         for (int i = 0; i < nf && out.chests.size() < kMaxChests; ++i) {
             bool known = false;
             for (uint32_t c : out.chests)
@@ -454,7 +504,29 @@ void BeginSettle(ULONGLONG now)
     r.nextTime = now + 50;
 }
 
-// Settled once the backpack changed and then stayed the same for kQuietMs (settleMs at most).
+// Whether every move of this pass has left its source slot: the host's answers arrive over
+// several frames, and a pass planned before they all did would send the same moves again.
+bool PassArrived()
+{
+    Run& r = g_run;
+    static inv::Owner now;
+    if (r.moveCount == r.passFirst || !inv::ReadOwner(r.playerId, now))
+        return true;
+    for (int i = r.passFirst; i < r.moveCount; ++i) {
+        const Move& m = r.moves[i];
+        const inv::Page& was = r.backpackMid.pages[m.srcPage];
+        const inv::Stack& before = was.slots[m.srcSlot];
+        for (int p = 0; p < now.pageCount; ++p) {
+            const inv::Stack& st = now.pages[p].slots[m.srcSlot];
+            if (now.pages[p].entity == was.entity && st.itemId == before.itemId && st.count == before.count)
+                return false;
+        }
+    }
+    return true;
+}
+
+// Settled once the backpack changed, every move of the pass arrived and then nothing changed
+// for kQuietMs (settleMs at most: a move the host refused never arrives).
 constexpr ULONGLONG kQuietMs = 300;
 bool Settled(ULONGLONG now)
 {
@@ -467,13 +539,60 @@ bool Settled(ULONGLONG now)
         r.lastChange = now;
         r.changed = true;
     }
-    if (r.changed && now - r.lastChange >= kQuietMs)
+    if (now - r.settleStart >= static_cast<ULONGLONG>(g_cfg.settleMs))
         return true;
-    return now - r.settleStart >= static_cast<ULONGLONG>(g_cfg.settleMs);
+    return r.changed && now - r.lastChange >= kQuietMs && PassArrived();
+}
+
+void BeginPasses(const inv::Owner& backpack, const inv::Owner* chests);
+
+// Plans the next pass for what is still in your backpack; false when nothing is left to try.
+bool StartRetry()
+{
+    Run& r = g_run;
+    const int before = r.moveCount;
+    const bool progressed = r.changed;
+    r.lastSig = BackpackSig(r.playerId);
+    r.changed = false;
+    if (g_cfg.tier2 == Tier2Mode::On) {
+        if (r.moveCount >= kMaxMoves)
+            return false;
+        PlanTier2(false);
+    } else {
+        // Without tier 2: "Deposit Stacks" again to the chests that still share an item with
+        // you, as long as the last pass moved something (a full chest would take nothing).
+        ++r.pass;
+        if (!progressed || !inv::ReadOwner(r.playerId, r.backpackMid))
+            return false;
+        r.tier1Count = 0;
+        for (int c = 0; c < r.chestCount; ++c) {
+            if (!inv::ReadOwner(r.chests[c], r.chestsMid[c]))
+                continue;
+            if (SharesItem(r.backpackMid, r.chestsMid[c]) && !HoldsKeptItem(r.backpackMid, r.chestsMid[c]))
+                r.tier1[r.tier1Count++] = c;
+        }
+        r.tier1Pending = r.tier1Count > 0;
+    }
+    r.sentThisPass = r.moveCount > before || r.tier1Pending;
+    if (!r.sentThisPass)
+        return false;
+    Log("deposit: retry pass %d", r.pass);
+    r.next = r.moveCount > before ? before : 0;
+    r.phase = r.moveCount > before ? Phase::Tier2 : Phase::Tier1;
+    return true;
 }
 
 bool Start(void* cl, std::string& why)
 {
+    // Whose marks count is not known yet (keep.h Waiting): a deposit now could take them.
+    if (keep::Waiting()) {
+        why = "the character you play is not known yet";
+        Log("deposit: %s - nothing sent", why.c_str());
+        char line[512];
+        _snprintf_s(line, _TRUNCATE, "Quick Deposit: %s", lang::T(lang::Str::WaitingForCharacter));
+        chat::Post(line);
+        return false;
+    }
     BaseScan scan;
     if (!ScanBase(cl, g_cfg, scan, why)) {
         Log("deposit: %s", why.c_str());
@@ -489,6 +608,7 @@ bool Start(void* cl, std::string& why)
     r.moveCount = 0;
     r.notesLen = 0;
     r.notes[0] = 0;
+    r.noRoomCount = 0;
     r.magicCount = scan.magicCount;
     for (uint32_t c : scan.chests)
         r.chests[r.chestCount++] = c;
@@ -505,7 +625,9 @@ bool Start(void* cl, std::string& why)
     if (keep::Any() && !r.chestsVisible) {
         why = "inventories not readable yet, and you keep marked items";
         Log("deposit: %s - nothing sent", why.c_str());
-        chat::Post("Quick Deposit: can't read the chests yet, so nothing was deposited (you keep marked items). Try again in a moment.");
+        char line[512];
+        _snprintf_s(line, _TRUNCATE, "Quick Deposit: %s", lang::T(lang::Str::ChestsUnreadable));
+        chat::Post(line);
         return false;
     }
     // Every page of the player: its InventoryCategory, filled slots, and whether it counts as
@@ -527,36 +649,92 @@ bool Start(void* cl, std::string& why)
         Log("deposit: your %d pages (entity:kind:filled:role):%s", r.backpackBefore.pageCount, pages);
     }
 
+    // With this game hosting the world: first everything that goes onto stacks the chests already
+    // hold, at once, the way a Quick Stack Station deposits (host.h); then the rest as usual.
+    if (r.chestsVisible && host::RequestWholeBase(playerId, r.chests, r.chestCount)) {
+        Log("deposit: whole-base deposit asked of this game's host part");
+        r.wholeAt = GetTickCount64();
+        r.phase = Phase::Whole;
+        r.nextTime = 0;
+        return true;
+    }
+    BeginPasses(r.backpackBefore, r.chestsBefore);
+    return true;
+}
+
+// Tier 1 and the first tier 2 pass, planned from these inventories (as they were at the start,
+// or after the whole-base deposit).
+void BeginPasses(const inv::Owner& backpack, const inv::Owner* chests)
+{
+    Run& r = g_run;
     // Tier 1 only where it can do something: chests holding an item you carry (all of them
     // when the contents can't be read).
     // Chests holding a kept item you carry are left out: their stacks go there one by one.
     r.tier1Count = 0;
     for (int c = 0; c < r.chestCount; ++c) {
-        if (r.chestsVisible && !SharesItem(r.backpackBefore, r.chestsBefore[c]))
+        if (r.chestsVisible && !SharesItem(backpack, chests[c]))
             continue;
-        if (r.chestsVisible && HoldsKeptItem(r.backpackBefore, r.chestsBefore[c])) {
+        if (r.chestsVisible && HoldsKeptItem(backpack, chests[c])) {
             Log("deposit: chest %u holds a kept item - single moves instead of Deposit Stacks", r.chests[c]);
             continue;
         }
         r.tier1[r.tier1Count++] = c;
     }
-    r.tier1Pending = r.tier1Count > 0;
     r.pass = 0;
-    if (g_cfg.tier2 == Tier2Mode::On && r.backpackBefore.pageCount && r.chestsVisible)
-        PlanTier2(true);
+    r.retryWaited = false;
+    if (g_cfg.tier2 == Tier2Mode::On && backpack.pageCount && r.chestsVisible) {
+        // The moves go out first: a chest they put a kept item into holds it by the time
+        // "Deposit Stacks" gets there, which would take the kept stacks along. Such a chest is
+        // left out of tier 1 too, and the moves are planned again (its other stacks one by one).
+        for (int round = 0; round < 4; ++round) {
+            r.moveCount = 0;
+            r.pass = 0;
+            PlanTier2(true);
+            int left = 0;
+            for (int i = 0; i < r.tier1Count; ++i) {
+                bool getsKept = false;
+                for (int m = 0; m < r.moveCount && !getsKept; ++m)
+                    getsKept = r.moves[m].chest == r.tier1[i] && keep::IsKept(r.moves[m].itemId);
+                if (getsKept)
+                    Log("deposit: chest %u gets a kept item - single moves instead of Deposit Stacks",
+                        r.chests[r.tier1[i]]);
+                else
+                    r.tier1[left++] = r.tier1[i];
+            }
+            if (left == r.tier1Count)
+                break;
+            r.tier1Count = left;
+        }
+    }
+    r.tier1Pending = r.tier1Count > 0;
     r.sentThisPass = r.tier1Pending || r.moveCount > 0;
-    r.lastSig = BackpackSig(playerId);
+    r.lastSig = BackpackSig(r.playerId);
     r.changed = false;
     r.settleStart = r.lastChange = GetTickCount64();
     r.next = 0;
     r.phase = r.moveCount ? Phase::Tier2 : r.tier1Pending ? Phase::Tier1 : Phase::Settle2;
     r.nextTime = 0;
-    return true;
 }
 
+// "Deposit Stacks" to one tier 1 chest per delayMs: the host takes one transfer per network
+// tick and drops the rest of a burst.
 void StepTier1(void* cl, ULONGLONG now)
 {
     Run& r = g_run;
+    // Checked again right before: "Deposit Stacks" into a chest that holds a kept item you carry
+    // would take the kept stacks along.
+    inv::Owner chest, backpack;
+    const uint32_t target = r.chests[r.tier1[r.next]];
+    if (r.chestsVisible && inv::ReadOwner(target, chest) && inv::ReadOwner(r.playerId, backpack) &&
+        HoldsKeptItem(backpack, chest)) {
+        Log("deposit: chest %u holds a kept item now - no Deposit Stacks there", target);
+        if (++r.next == r.tier1Count) {
+            Log("deposit: tier 1 sent to %d of %d chests", r.tier1Count, r.chestCount);
+            r.tier1Pending = false;
+            BeginSettle(now);
+        }
+        return;
+    }
     alignas(8) uint8_t cmd[kCmdSize] = {};
     cmd[0] = kCmdTransfer;
     At<uint32_t>(cmd, kCmdFlagIndex) = kFlagRefillStacks;
@@ -570,63 +748,6 @@ void StepTier1(void* cl, ULONGLONG now)
         Log("deposit: tier 1 sent to %d of %d chests", r.tier1Count, r.chestCount);
         r.tier1Pending = false;
         BeginSettle(now);
-    }
-}
-
-// The asset group an item's internal name starts with: "Armor" in "Armor_T0_Fur_Legs", "Ring"
-// in "Ring_T1_Ring_of_Mana". Splits equipment into armor, rings, shields, backpacks...
-bool SameGroup(const inv::ItemDesc& a, const inv::ItemDesc& b)
-{
-    const char* ea = strchr(a.raw, '_');
-    const char* eb = strchr(b.raw, '_');
-    size_t la = ea ? static_cast<size_t>(ea - a.raw) : strlen(a.raw);
-    size_t lb = eb ? static_cast<size_t>(eb - b.raw) : strlen(b.raw);
-    return la && la == lb && strncmp(a.raw, b.raw, la) == 0;
-}
-
-// Seedlings share the building-materials category with blocks (both are placed in the world),
-// but a seed chest is no place for blocks.
-bool IsSeedling(const inv::ItemDesc& d)
-{
-    return _strnicmp(d.raw, "Seedling", 8) == 0 || _strnicmp(d.name, "Seedling", 8) == 0;
-}
-
-// The game's building category also holds what it shows as Tools: pickaxes, rakes, the watering
-// can ("Tool_...") and NPCs' summoning staffs ("NPC_..."). They go with tools, not with blocks.
-bool IsTool(const inv::ItemDesc& d)
-{
-    return _strnicmp(d.raw, "Tool_", 5) == 0 || _strnicmp(d.raw, "NPC_", 4) == 0 ||
-           _strnicmp(d.raw, "NpcSummoner", 11) == 0;
-}
-
-// Same category; weapons also need the same weapon type, ammunition the same kind of ammo
-// (arrows, spells, fishing bait), equipment the same group (armor, rings, shields...),
-// seedlings go only with seedlings and tools only with tools.
-bool SameKind(const inv::ItemDesc& a, const inv::ItemDesc& b)
-{
-    if (!a.known || !b.known || a.category != b.category)
-        return false;
-    if (IsSeedling(a) != IsSeedling(b) || IsTool(a) != IsTool(b))
-        return false;
-    if (a.category == kCategoryWeapons)
-        return memcmp(a.weaponType, b.weaponType, sizeof(a.weaponType)) == 0;
-    if (a.category == kCategoryAmmunition)
-        return a.ammoType == b.ammoType;
-    if (a.category == kCategoryEquipment)
-        return SameGroup(a, b);
-    return true;
-}
-
-// Ammunition belongs with the weapons that fire it, the way the game labels arrows "Bow Ammo":
-// arrows with bows, spell charges with staves and wands.
-bool AmmoFits(const inv::ItemDesc& ammo, const inv::ItemDesc& weapon)
-{
-    if (!ammo.known || !weapon.known || ammo.category != kCategoryAmmunition || weapon.category != kCategoryWeapons)
-        return false;
-    switch (ammo.ammoType) {
-    case 1: return strstr(weapon.raw, "Bow") != nullptr;
-    case 2: return strstr(weapon.raw, "Staff") != nullptr || strstr(weapon.raw, "Wand") != nullptr;
-    default: return false;
     }
 }
 
@@ -646,66 +767,45 @@ bool FreeSlot(const inv::Owner& o, int& page, int& slot)
     return false;
 }
 
-// Lower-case words of at least 3 letters, plural "s" dropped, split at "_", spaces,
-// punctuation and inner capitals ("WandEpic" -> wand, epic). Returns how many were written.
-int Words(const char* text, char (*out)[24], int max)
+// Whether text holds part, in any language: ignoring case and accents, and without needing
+// spaces (Chinese, Japanese, Korean, Thai). Both UTF-8.
+bool HoldsText(const char* text, const char* part)
 {
-    static const char* const ignore[] = {"and", "the", "misc", "chest", "stuff", "other", "epic", "craft"};
-    int n = 0;
-    char word[24];
-    int len = 0;
-    auto flush = [&]() {
-        if (len >= 3 && n < max) {
-            word[len] = 0;
-            if (len > 3 && word[len - 1] == 's')
-                word[len - 1] = 0;
-            bool skip = false;
-            for (const char* i : ignore)
-                skip |= strcmp(word, i) == 0;
-            if (!skip)
-                strcpy_s(out[n++], word);
-        }
-        len = 0;
-    };
-    for (const char* c = text;; ++c) {
-        unsigned char ch = static_cast<unsigned char>(*c);
-        bool letter = isalpha(ch) != 0;
-        if (letter && len && isupper(ch) && islower(static_cast<unsigned char>(c[-1])))
-            flush();
-        if (letter) {
-            if (len < 23)
-                word[len++] = static_cast<char>(tolower(ch));
-        } else {
-            flush();
-            if (!ch)
-                break;
-        }
-    }
-    return n;
+    if (!part || !*part || !text || !*text)
+        return false;
+    wchar_t t[160], p[160];
+    int tl = MultiByteToWideChar(CP_UTF8, 0, text, -1, t, 160);
+    int pl = MultiByteToWideChar(CP_UTF8, 0, part, -1, p, 160);
+    if (tl <= 1 || pl <= 1)
+        return false;
+    return FindNLSStringEx(LOCALE_NAME_USER_DEFAULT, FIND_FROMSTART | LINGUISTIC_IGNORECASE | LINGUISTIC_IGNOREDIACRITIC,
+                           t, tl - 1, p, pl - 1, nullptr, nullptr, nullptr, 0) >= 0;
 }
 
-// How well a chest's name fits the item: a word of the item's own name ("Wand", "Fire") counts
-// 3, a word only found in its asset group or category ("Weapon", "Materials") counts 1, so
-// "Wands" beats "Melee Weapons" for a wand.
+// How a chest's name fits the item, from the game's own text in your language: the item's whole
+// name (1000: "Adventurer Helmet"), then for equipment its type ("Head Armor", 500; a chest named
+// for another type, "Foot Armor", never fits), then "Equippable" (100). Below that the words (see
+// WordScore).
 int NameScore(const char* chestName, const inv::ItemDesc& d)
 {
-    char chestWords[8][24], ownWords[12][24], groupWords[24][24];
-    int nc = Words(chestName, chestWords, 8);
-    int no = Words(d.name, ownWords, 12);
-    int ng = Words(d.raw, groupWords, 20);
-    ng += Words(inv::CategoryName(d.category), groupWords + ng, 24 - ng);
-    int score = 0;
-    for (int i = 0; i < nc; ++i) {
-        int best = 0;
-        for (int k = 0; k < no && best < 3; ++k)
-            if (strcmp(chestWords[i], ownWords[k]) == 0)
-                best = 3;
-        for (int k = 0; k < ng && !best; ++k)
-            if (strcmp(chestWords[i], groupWords[k]) == 0)
-                best = 1;
-        score += best;
+    if (d.shown[0] && strcmp(d.shown, d.name) != 0 && HoldsText(chestName, d.shown))
+        return 1000;
+    if (HoldsText(chestName, d.name))
+        return 1000;
+    if (d.category == kCategoryEquipment && d.equipSlot) {
+        for (uint8_t other : inv::TypeSlots())
+            if (other != d.equipSlot)
+                for (const std::string& name : inv::TypeNames(other))
+                    if (HoldsText(chestName, name.c_str()))
+                        return 0;
+        for (const std::string& name : inv::TypeNames(d.equipSlot))
+            if (HoldsText(chestName, name.c_str()))
+                return 500;
+        for (const std::string& name : inv::TypeNames(0))
+            if (HoldsText(chestName, name.c_str()))
+                return 100;
     }
-    return score;
+    return WordScore(chestName, d);
 }
 
 // onlyNew: plan only the stacks no chest holds (tier 1 takes care of the others).
@@ -720,6 +820,7 @@ void PlanTier2(bool onlyNew)
     // What stays in the backpack is this pass's to say (an earlier pass listed the same stacks).
     r.notesLen = 0;
     r.notes[0] = 0;
+    r.noRoomCount = 0;
     if (!inv::ReadOwner(r.playerId, r.backpackMid))
         return;
     for (int i = 0; i < r.chestCount; ++i)
@@ -767,20 +868,30 @@ void PlanTier2(bool onlyNew)
                 continue; // stays with you by design (category not enabled)
             if (onlyNew && tier1Home)
                 continue;
+            if (g_cfg.newItemsStay && !AnyChestHolds(st.itemId)) {
+                Note("  %s: no chest holds it yet (newItems=stay)", d.shown);
+                continue;
+            }
 
-            // Among chests with a free slot: 1. one holding this exact item (the best of them),
-            // 2. the one holding the most items of the same kind (weapon or ammo type), 3. the one
-            // whose name matches the item best, 4. for weapons the one holding the most weapons,
-            // 5. the nearest.
+            // Among chests with a free slot, by default (tier2Order): 1. one holding this exact
+            // item (the best of them), 2. the one holding the most items of the same kind (weapon
+            // or ammo type), 3. the one whose name matches the item best, 4. for weapons the one
+            // holding the most weapons, 5. the nearest.
             int sameItem = -1, kindChest = -1, catChest = -1, nameChest = -1, nearChest = -1;
-            int bestKind = 0, bestCat = 0, bestName = 0, sameItemKind = -1;
+            int bestCat = 0, bestName = 0, sameItemKind = -1;
+            uint64_t sameItemCount = 0;
+            KindFit bestFit;
+            bool fullFits = false; // a chest for it (same item, kind or name) has no free slot
             for (int c = 0; c < r.chestCount; ++c) {
                 const inv::Owner& ch = r.chestsMid[c];
                 int pg, sl;
-                if (!FreeSlot(ch, pg, sl))
-                    continue;
+                const bool room = FreeSlot(ch, pg, sl);
                 bool holdsItem = CountOf(ch, st.itemId) > 0;
-                int kind = 0, cat = 0;
+                // The different items the chest holds, for the kind; and how many of its stacks
+                // are of the item's category, for weapons.
+                static inv::ItemDesc held[64];
+                uint32_t heldIds[64];
+                int heldCount = 0, cat = 0;
                 for (int cp = 0; cp < ch.pageCount; ++cp) {
                     if (!IsStoragePage(ch.pages[cp]))
                         continue;
@@ -788,17 +899,33 @@ void PlanTier2(bool onlyNew)
                         if (!cs.itemId)
                             continue;
                         inv::ItemDesc cd = inv::Describe(cs.itemId);
-                        kind += SameKind(cd, d) || AmmoFits(d, cd) ? 1 : 0;
                         cat += cd.known && cd.category == d.category ? 1 : 0;
+                        if (heldCount < 64 && std::find(heldIds, heldIds + heldCount, cs.itemId) == heldIds + heldCount) {
+                            heldIds[heldCount] = cs.itemId;
+                            held[heldCount++] = cd;
+                        }
                     }
                 }
-                if (kind > bestKind) {
-                    bestKind = kind;
+                int score = names[c][0] ? NameScore(names[c], d) : 0;
+                const KindFit fit = FitByKind(d, held, heldCount, score);
+                const int kind = fit.kind;
+                if (!room) {
+                    fullFits |= holdsItem || fit.Any() || score > 0;
+                    continue;
+                }
+                if (fit.Any() && fit > bestFit) {
+                    bestFit = fit;
                     kindChest = c;
                 }
                 // Several chests may hold the item (someone's own chest, a stray stack): the one
-                // holding the most of its kind is its real home, the nearer one on a tie.
-                if (holdsItem && (kind > sameItemKind || (kind == sameItemKind && dist[c] < dist[sameItem]))) {
+                // holding the most of the item itself is its real home (1600 Flax in the seed
+                // chest beat 28 that strayed into the materials chest), then the one holding the
+                // most of its kind, then the nearer one.
+                uint64_t have = holdsItem ? CountOf(ch, st.itemId) : 0;
+                if (holdsItem && (have > sameItemCount ||
+                                  (have == sameItemCount && (kind > sameItemKind ||
+                                                             (kind == sameItemKind && dist[c] < dist[sameItem]))))) {
+                    sameItemCount = have;
                     sameItemKind = kind;
                     sameItem = c;
                 }
@@ -806,7 +933,6 @@ void PlanTier2(bool onlyNew)
                     bestCat = cat;
                     catChest = c;
                 }
-                int score = names[c][0] ? NameScore(names[c], d) : 0;
                 if (score > bestName) {
                     bestName = score;
                     nameChest = c;
@@ -814,43 +940,84 @@ void PlanTier2(bool onlyNew)
                 if (nearChest < 0 || dist[c] < dist[nearChest])
                     nearChest = c;
             }
-            int chest = nearChest;
+            int chest = -1;
             Reason reason = Reason::Nearest;
-            if (sameItem >= 0) {
-                chest = sameItem;
-                reason = Reason::SameItem;
-            } else if (kindChest >= 0) {
-                chest = kindChest;
-                reason = Reason::SameKind;
-            } else if (nameChest >= 0) {
-                chest = nameChest;
-                reason = Reason::ChestName;
-            } else if (catChest >= 0 && d.category == kCategoryWeapons) {
-                chest = catChest;
-                reason = Reason::SameCategory;
+            bool gearStays = false;
+            for (int i = 0; i < g_cfg.tier2RuleCount && chest < 0; ++i) {
+                switch (g_cfg.tier2Order[i]) {
+                case Tier2Rule::SameItem: chest = sameItem; reason = Reason::SameItem; break;
+                case Tier2Rule::SameKind: chest = kindChest; reason = Reason::SameKind; break;
+                case Tier2Rule::ChestName: chest = nameChest; reason = Reason::ChestName; break;
+                case Tier2Rule::Weapons:
+                    chest = d.category == kCategoryWeapons ? catChest : -1;
+                    reason = Reason::SameCategory;
+                    break;
+                case Tier2Rule::Nearest:
+                    // Gear no chest holds or is named for stays: the nearest chest is no place
+                    // for a helmet.
+                    gearStays = d.category == kCategoryEquipment && d.equipSlot;
+                    chest = gearStays ? -1 : nearChest;
+                    reason = Reason::Nearest;
+                    break;
+                }
             }
             if (chest < 0) {
-                Note("  %s x%u: every chest is full", d.shown, st.count - keepCount);
+                if (nearChest < 0 || fullFits) {
+                    Note("  %s x%u: %s", d.shown, st.count - keepCount,
+                         nearChest < 0 ? "every chest is full" : "its chests are full");
+                    NoRoom(st.itemId, st.count - keepCount);
+                } else if (gearStays)
+                    Note("  %s: no chest for this kind of gear yet", d.shown);
+                else
+                    Note("  %s: no chest by tier2Order", d.shown);
                 continue;
             }
-            if (r.moveCount == kMaxMoves)
-                continue;
             inv::Owner& ch = r.chestsMid[chest];
-            Move& m = r.moves[r.moveCount++];
-            FreeSlot(ch, m.dstPage, m.dstSlot);
-            ch.pages[m.dstPage].slots[m.dstSlot] = st; // reserve the slot for the next stacks
-            m.srcPage = p;
-            m.srcSlot = s;
-            m.chest = chest;
-            m.itemId = st.itemId;
-            m.count = st.count - keepCount;
-            m.part = keepCount > 0;
-            m.reason = reason;
+            uint32_t srcLeft = st.count;
+            auto add = [&](int dstPage, int dstSlot, uint32_t count, bool part) {
+                Move& m = r.moves[r.moveCount++];
+                m.srcCount = srcLeft;
+                m.srcFull = st.count;
+                srcLeft -= count;
+                m.srcPage = p;
+                m.srcSlot = s;
+                m.chest = chest;
+                m.dstPage = dstPage;
+                m.dstSlot = dstSlot;
+                m.itemId = st.itemId;
+                m.count = count;
+                m.part = part;
+                m.reason = reason;
+            };
+            // The chest's unfilled stacks of the item first, as Deposit Stacks would (a chest
+            // holding a kept item gets no Deposit Stacks), so no new half stack starts beside them.
+            uint32_t left = st.count - keepCount;
+            for (int cp = 0; cp < ch.pageCount && left && d.maxStack > 1; ++cp) {
+                if (!IsStoragePage(ch.pages[cp]))
+                    continue;
+                for (int cs = 0; cs < inv::kSlotsPerPage && left && r.moveCount < kMaxMoves; ++cs) {
+                    inv::Stack& there = ch.pages[cp].slots[cs];
+                    if (there.itemId != st.itemId || there.count >= d.maxStack)
+                        continue;
+                    uint32_t put = std::min<uint32_t>(left, d.maxStack - there.count);
+                    add(cp, cs, put, true);
+                    there.count += put; // for the next stacks of the item
+                    left -= put;
+                }
+            }
+            if (left && r.moveCount < kMaxMoves) {
+                int pg, sl;
+                FreeSlot(ch, pg, sl);
+                ch.pages[pg].slots[sl] = st; // reserve the slot for the next stacks
+                ch.pages[pg].slots[sl].count = left;
+                add(pg, sl, left, keepCount > 0);
+            }
         }
     }
     Log("deposit: tier 2 pass %d: %d stacks in the backpack, %d to move", r.pass, seen, r.moveCount - first);
 }
 
+// One move per delayMs, then tier 1 (if due).
 void StepTier2(void* cl, ULONGLONG now)
 {
     Run& r = g_run;
@@ -866,7 +1033,21 @@ void StepTier2(void* cl, ULONGLONG now)
         cmd[kCmdType] = kTypeSplit;
         At<uint16_t>(cmd, kCmdSplitCount) = static_cast<uint16_t>(m.count > 0xffff ? 0xffff : m.count);
     }
-    Send(cl, cmd);
+    // The source slot must still hold the stack the move was planned for: in a backpack sorted
+    // since, it holds another stack, maybe a kept one. (Up to the whole stack: an earlier part
+    // of it may not have left yet.) The next pass plans again from what is there.
+    static inv::Owner me;
+    const inv::Stack* src = nullptr;
+    if (inv::ReadOwner(r.playerId, me))
+        for (int p = 0; p < me.pageCount && !src; ++p)
+            if (me.pages[p].entity == r.backpackMid.pages[m.srcPage].entity)
+                src = &me.pages[p].slots[m.srcSlot];
+    if (src && src->itemId == m.itemId && src->count >= m.srcCount && src->count <= m.srcFull)
+        Send(cl, cmd);
+    else
+        Log("deposit: move skipped - page %u slot %d holds item %u x%u now, not %u x%u",
+            r.backpackMid.pages[m.srcPage].entity, m.srcSlot, src ? src->itemId : 0, src ? src->count : 0,
+            m.itemId, m.srcCount);
     r.nextTime = now + g_cfg.delayMs;
     if (++r.next == r.moveCount) {
         Log("deposit: tier 2 sent %d moves", r.moveCount - r.passFirst);
@@ -935,8 +1116,12 @@ void WriteReport()
             }
         return 0;
     };
+    uint64_t storedItems = 0; // for chat=short
+    int storedChests = -1;    // -1: unknown (chest contents not readable)
     if (r.chestsVisible) {
         // Per chest: what it gained from you, from its contents before and after.
+        uint32_t filled[kMaxChests];
+        int filledCount = 0;
         for (int c = 0; c < r.chestCount; ++c) {
             inv::Owner now;
             if (!inv::ReadOwner(r.chests[c], now))
@@ -944,11 +1129,13 @@ void WriteReport()
             uint32_t ids[64];
             uint64_t counts[64];
             int n = Totals(now, ids, counts, 64);
-            char label[160];
+            char label[160], chatLabel[160];
             ChestLabel(c, r.chestsBefore[c], label, sizeof(label));
+            ChestLabel(c, r.chestsBefore[c], chatLabel, sizeof(chatLabel), true);
             bool header = false;
-            char chatLine[220];
-            int chatLen = _snprintf_s(chatLine, _TRUNCATE, "%s:", label);
+            char chatLine[320];
+            int chatLen = _snprintf_s(chatLine, _TRUNCATE, "%s:", chatLabel);
+            const int chatStart = chatLen;
             for (int i = 0; i < n; ++i) {
                 uint64_t before = CountOf(r.chestsBefore[c], ids[i]);
                 if (counts[i] <= before)
@@ -963,17 +1150,23 @@ void WriteReport()
                 inv::ItemDesc item = inv::Describe(ids[i]);
                 const char* name = item.shown;
                 unsigned long long added = mine;
+                storedItems += added;
                 rep.Line("  + %s x%llu", name, added);
-                if (chatLen > 0 && chatLen < 200) {
+                if (chatLen > 0 && chatLen < 240) {
                     int w = _snprintf_s(chatLine + chatLen, sizeof(chatLine) - chatLen, _TRUNCATE, "%s %s x%llu",
-                                        chatLen > static_cast<int>(strlen(label)) + 1 ? "," : "", name, added);
-                    chatLen = w < 0 ? 200 : chatLen + w;
+                                        chatLen > chatStart ? "," : "", name, added);
+                    chatLen = w < 0 ? 240 : chatLen + w;
                 }
                 ++lines;
             }
-            if (header)
-                chat::Post(chatLine);
+            if (header) {
+                chat::Post(chatLine, chat::Kind::Detail);
+                filled[filledCount++] = r.chests[c];
+            }
         }
+        storedChests = filledCount;
+        if (g_cfg.glowMs > 0)
+            glow::Pulse(filled, filledCount, static_cast<uint32_t>(g_cfg.glowMs));
     } else {
         // Chest contents unknown to the client: report what left the backpack.
         uint32_t ids[128];
@@ -982,33 +1175,70 @@ void WriteReport()
         for (int i = 0; i < n; ++i) {
             uint64_t now = CountOf(after, ids[i]);
             if (now < counts[i]) {
+                storedItems += counts[i] - now;
                 rep.Line("  deposited %s x%llu", inv::Describe(ids[i]).shown, static_cast<unsigned long long>(counts[i] - now));
                 ++lines;
             }
         }
     }
+    // What stayed because its chests are full.
+    uint64_t noRoomItems = 0;
+    char noRoom[260] = "";
+    for (int i = 0, len = 0; i < r.noRoomCount; ++i) {
+        noRoomItems += r.noRoomCounts[i];
+        if (len >= 0 && len < 240) {
+            int w = _snprintf_s(noRoom + len, sizeof(noRoom) - len, _TRUNCATE, "%s %s x%llu", i ? "," : "",
+                                inv::Describe(r.noRoomIds[i]).shown, static_cast<unsigned long long>(r.noRoomCounts[i]));
+            len = w < 0 ? 240 : len + w;
+        }
+    }
     if (!lines) {
         rep.Line("Nothing was deposited.");
-        chat::Post("Quick Deposit: nothing to deposit");
+        if (!r.noRoomCount) { // else the no-room line says why
+            char chatLine[160];
+            _snprintf_s(chatLine, _TRUNCATE, "Quick Deposit: %s", lang::T(lang::Str::NothingToDeposit));
+            chat::Post(chatLine);
+        }
+    } else {
+        // chat=short: everything above in one line.
+        char text[200], chatLine[240];
+        unsigned items = static_cast<unsigned>(storedItems < 0xFFFFFFFFull ? storedItems : 0xFFFFFFFFull);
+        if (storedChests >= 0)
+            _snprintf_s(text, _TRUNCATE, lang::T(lang::Str::DepositSummary), items, static_cast<unsigned>(storedChests));
+        else
+            _snprintf_s(text, _TRUNCATE, lang::T(lang::Str::DepositSummaryItems), items);
+        _snprintf_s(chatLine, _TRUNCATE, "Quick Deposit: %s", text);
+        chat::Post(chatLine, chat::Kind::Summary);
     }
     {
         // What stayed because you keep it.
         uint32_t ids[64];
         uint64_t counts[64];
         int n = KeptTotals(after, ids, counts, 64);
-        char line[220];
-        int len = _snprintf_s(line, _TRUNCATE, "Kept (marked):");
-        for (int i = 0; i < n && len > 0 && len < 200; ++i) {
-            int w = _snprintf_s(line + len, sizeof(line) - len, _TRUNCATE, "%s %s x%llu", i ? "," : "",
+        char items[260] = "";
+        int len = 0;
+        for (int i = 0; i < n && len >= 0 && len < 240; ++i) {
+            int w = _snprintf_s(items + len, sizeof(items) - len, _TRUNCATE, "%s %s x%llu", i ? "," : "",
                                 inv::Describe(ids[i]).shown, static_cast<unsigned long long>(counts[i]));
-            len = w < 0 ? 200 : len + w;
+            len = w < 0 ? 240 : len + w;
         }
         if (n) {
-            rep.Line("%s", line);
-            char chatLine[240];
-            _snprintf_s(chatLine, _TRUNCATE, "Quick Deposit: %s", line);
-            chat::Post(chatLine);
+            rep.Line("Kept (marked):%s", items);
+            char chatLine[360];
+            _snprintf_s(chatLine, _TRUNCATE, "Quick Deposit: %s%s", lang::T(lang::Str::KeptMarked), items);
+            chat::Post(chatLine, chat::Kind::Detail);
         }
+    }
+    if (r.noRoomCount) {
+        rep.Line("No room in chests for:%s", noRoom);
+        char chatLine[360], text[200];
+        _snprintf_s(chatLine, _TRUNCATE, "Quick Deposit: %s%s", lang::T(lang::Str::NoRoom), noRoom);
+        chat::Post(chatLine, chat::Kind::Detail);
+        // chat=short: the count only.
+        _snprintf_s(text, _TRUNCATE, lang::T(lang::Str::NoRoomCount),
+                    static_cast<unsigned>(noRoomItems < 0xFFFFFFFFull ? noRoomItems : 0xFFFFFFFFull));
+        _snprintf_s(chatLine, _TRUNCATE, "Quick Deposit: %s", text);
+        chat::Post(chatLine, chat::Kind::Summary);
     }
 
     if (g_cfg.tier2 == Tier2Mode::DryRun && r.moveCount) {
@@ -1027,6 +1257,9 @@ void WriteReport()
         rep.Line("Sorted by kind:");
         for (int i = 0; i < r.moveCount; ++i) {
             const Move& m = r.moves[i];
+            if (i && r.moves[i - 1].srcPage == m.srcPage && r.moves[i - 1].srcSlot == m.srcSlot &&
+                r.moves[i - 1].chest == m.chest)
+                continue; // one stack in parts (topping up the chest's stacks): one line
             char label[160];
             ChestLabel(m.chest, r.chestsBefore[m.chest], label, sizeof(label));
             // The host may pick another free slot, so check the chest as a whole.
@@ -1038,8 +1271,10 @@ void WriteReport()
             rep.Line("  %s -> %s (%s): %s", name, label,
                      ReasonText(m.reason), arrived ? "done" : "did NOT move");
             if (!arrived) {
-                char chatLine[220];
-                _snprintf_s(chatLine, _TRUNCATE, "Quick Deposit: %s could not be moved to %s", name, label);
+                char chatLabel[160], text[320], chatLine[360];
+                ChestLabel(m.chest, r.chestsBefore[m.chest], chatLabel, sizeof(chatLabel), true);
+                _snprintf_s(text, _TRUNCATE, lang::T(lang::Str::CouldNotMove), name, chatLabel);
+                _snprintf_s(chatLine, _TRUNCATE, "Quick Deposit: %s", text);
                 chat::Post(chatLine);
             }
         }
@@ -1082,8 +1317,11 @@ void UpdateBackpackPages()
     keep::SetBackpack(me);
 }
 
+std::atomic<void*> g_lastApp{nullptr}; // dev inspection
+
 void Tick(void* app)
 {
+    g_lastApp = app;
     g_client = ClientFromApp(app);
     chat::SetClient(g_client);
     // Another world (a server, back to your own): its inventories live in other registries.
@@ -1094,16 +1332,77 @@ void Tick(void* app)
             inv::Forget();
         lastWorld = world;
     }
+    character::Tick(g_client, world != nullptr);
+    keep::FollowCharacter();
     UpdateBackpackPages();
     keep::Tick();
-    if (g_requested.exchange(false)) {
-        if (g_run.phase != Phase::Idle) {
-            Log("deposit: still busy with the last one");
-        } else {
-            g_cfg = g_pending;
-            std::string why;
-            Start(ClientFromApp(app), why);
+    // Gear you put away in a chest loses its mark (keep.h UnmarkStored); every few seconds, and
+    // never during a deposit (which leaves kept items where they are anyway).
+    static ULONGLONG lastStoredCheck = 0;
+    if (g_run.phase == Phase::Idle && keep::AnyAmountMark() && GetTickCount64() - lastStoredCheck > 5000) {
+        lastStoredCheck = GetTickCount64();
+        BaseScan scan;
+        std::string why;
+        if (ScanBase(g_client, g_baseCfg, scan, why) && scan.readable) {
+            static inv::Owner player;
+            static std::vector<inv::Owner> chests;
+            if (inv::ReadOwner(scan.playerId, player)) {
+                chests.resize(scan.chests.size());
+                int n = 0;
+                for (uint32_t c : scan.chests)
+                    if (inv::ReadOwner(c, chests[n]))
+                        ++n;
+                keep::UnmarkStored(player, chests.data(), n);
+            }
         }
+    }
+    if (host::TakeStationUse()) {
+        if (g_run.phase == Phase::Idle) {
+            g_pending = g_baseCfg;
+            g_requested = true;
+            Log("deposit requested (Quick Stack Station)");
+        }
+    }
+    if (g_baseCfg.glowMs > 0) {
+        std::vector<uint32_t> filled = host::TakeFilled();
+        if (!filled.empty())
+            glow::Pulse(filled.data(), static_cast<int>(filled.size()), static_cast<uint32_t>(g_baseCfg.glowMs));
+    }
+    glow::Tick(keep::BackpackShown());
+    host::ClientTick(world, LocalPlayerId());
+    // G twice sorted the backpack twice too, and its stacks move when the host's answer arrives:
+    // the deposit plans once the backpack stayed the same for kSortQuietMs (settleMs at most).
+    constexpr ULONGLONG kSortQuietMs = 400;
+    static ULONGLONG sortSince = 0, sortQuietFrom = 0;
+    static uint64_t sortSig = 0;
+    bool start = false;
+    if (g_requested.exchange(false)) {
+        if (g_run.phase != Phase::Idle || sortSince) {
+            Log("deposit: still busy with the last one");
+        } else if (g_requestSorted.exchange(false)) {
+            sortSince = sortQuietFrom = GetTickCount64();
+            sortSig = BackpackSig(LocalPlayerId());
+        } else {
+            start = true;
+        }
+    }
+    if (sortSince) {
+        ULONGLONG t = GetTickCount64();
+        uint64_t sig = BackpackSig(LocalPlayerId());
+        if (sig != sortSig) {
+            sortSig = sig;
+            sortQuietFrom = t;
+        }
+        if (t - sortQuietFrom >= kSortQuietMs || t - sortSince >= static_cast<ULONGLONG>(g_pending.settleMs)) {
+            Log("deposit: backpack sorted (%llu ms)", t - sortSince);
+            sortSince = 0;
+            start = true;
+        }
+    }
+    if (start) {
+        g_cfg = g_pending;
+        std::string why;
+        Start(ClientFromApp(app), why);
     }
     Run& r = g_run;
     if (r.phase == Phase::Idle)
@@ -1120,6 +1419,30 @@ void Tick(void* app)
         return;
     }
     switch (r.phase) {
+    case Phase::Whole: {
+        int filled = host::WholeBaseResult();
+        if (filled < 0 && now - r.wholeAt < 1500) {
+            r.nextTime = now + 20;
+            break;
+        }
+        if (filled < 0) {
+            host::CancelWholeBase();
+            Log("deposit: the host part did not run the whole-base deposit - chest by chest instead");
+        } else if (r.wholeAt) {
+            // Let the host's changes reach this game's view of the inventories.
+            r.wholeAt = 0;
+            r.nextTime = now + 250;
+            break;
+        }
+        r.wholeAt = 0;
+        if (!inv::ReadOwner(r.playerId, r.backpackMid))
+            r.backpackMid = r.backpackBefore;
+        for (int c = 0; c < r.chestCount; ++c)
+            if (!inv::ReadOwner(r.chests[c], r.chestsMid[c]))
+                r.chestsMid[c] = r.chestsBefore[c];
+        BeginPasses(r.backpackMid, r.chestsMid);
+        break;
+    }
     case Phase::Tier1:
         StepTier1(cl, now);
         break;
@@ -1134,18 +1457,18 @@ void Tick(void* app)
         if (g_cfg.tier2 == Tier2Mode::DryRun && r.backpackBefore.pageCount && r.chestsVisible) {
             r.moveCount = 0;
             PlanTier2(false);
-        } else if (g_cfg.tier2 == Tier2Mode::On && r.sentThisPass && r.pass < kMaxTier2Passes &&
-                   r.moveCount < kMaxMoves && r.backpackBefore.pageCount && r.chestsVisible) {
-            // Look again for what the last pass left or could not see.
-            const int before = r.moveCount;
-            r.lastSig = BackpackSig(r.playerId);
-            r.changed = false;
-            PlanTier2(false);
-            r.sentThisPass = r.moveCount > before;
-            if (r.sentThisPass) {
-                r.phase = Phase::Tier2;
+        } else if (g_cfg.tier2 != Tier2Mode::DryRun && r.sentThisPass && r.pass < kMaxPasses &&
+                   r.backpackBefore.pageCount && r.chestsVisible) {
+            // Staggered retry passes, each delayMs later than the one before: commands the host
+            // dropped, stacks that did not fit, items that arrived meanwhile.
+            if (!r.retryWaited) {
+                r.retryWaited = true;
+                r.nextTime = now + static_cast<ULONGLONG>(g_cfg.delayMs) * (r.pass + 1);
                 break;
             }
+            r.retryWaited = false;
+            if (StartRetry())
+                break;
         }
         WriteReport();
         r.phase = Phase::Idle;
@@ -1171,6 +1494,7 @@ void SafeTick(void* app)
 // SortInventoryEvent). Two of them within doubleSortMs start a deposit; both still sort, so G
 // keeps working as usual. Sorting only exists while an inventory is open.
 constexpr uint8_t kCmdSortInventory = 0x2d;
+constexpr size_t kCmdSortOwner = 0x04; // u32: the entity whose inventory it sorts (you: your player id)
 Config g_baseCfg;
 ULONGLONG g_lastSort = 0;
 
@@ -1202,12 +1526,19 @@ void UiDispatchHook(void* cl, uint8_t* cmd)
     if (g_traceCommands && cmd)
         TraceCommand(cmd);
 #endif
+    // Only sorts of your own inventory count: a chest's sort (T, or its sort button) is the same
+    // command with the chest at +4, and two of those started deposits too.
     if (cmd && cmd[0] == kCmdSortInventory && g_baseCfg.doubleSortMs > 0) {
+        const uint32_t sorted = At<uint32_t>(cmd, kCmdSortOwner);
+        const uint32_t me = LocalPlayerId();
         ULONGLONG now = GetTickCount64();
-        if (g_lastSort && now - g_lastSort <= static_cast<ULONGLONG>(g_baseCfg.doubleSortMs)) {
+        if (me && sorted != me) {
+            g_lastSort = 0;
+        } else if (g_lastSort && now - g_lastSort <= static_cast<ULONGLONG>(g_baseCfg.doubleSortMs)) {
             g_lastSort = 0;
             g_pending = g_baseCfg;
             g_requested = true;
+            g_requestSorted = true;
             Log("deposit requested (G twice)");
         } else {
             g_lastSort = now;
@@ -1262,7 +1593,7 @@ bool Init()
     uint8_t* loop;
     uint8_t* dispatch;
     bool ok = true;
-    ok &= Find(loop, "UiCommandLoop", "40 53 55 56 57 41 54 41 55 41 56 41 57 48 81 EC 98 00 00 00 48 8D 81 58 4F 03 00");
+    ok &= Find(loop, "UiCommandLoop", "40 53 55 56 57 41 54 41 55 41 56 41 57 48 81 EC 98 00 00 00 48 8D 81 78 4F 03 00");
     ok &= Find(dispatch, "UiDispatch", "4C 8B DC 55 56 57 49 8D AB 18 FF FF FF");
     if (!ok)
         return false;
@@ -1276,6 +1607,14 @@ bool Init()
         Log("hook install failed");
         return false;
     }
+    // In the chat command (0x74): cmp byte [rdi + allowed], 0; jne; cmp byte [rdx + 1], 4
+    if (uint8_t* check = FindUnique("80 BF ?? ?? ?? ?? 00 75 ?? 80 7A 01 04")) {
+        int32_t offset;
+        memcpy(&offset, check + 2, 4);
+        g_textChatAllowed = offset > 0 && offset < 0x800000 ? static_cast<size_t>(offset) : 0;
+    }
+    if (!g_textChatAllowed)
+        Log("chat permission check not found: on servers with text chat off, the host's Quick Deposit is not reached");
     auto base = reinterpret_cast<uint8_t*>(GetModuleHandleW(nullptr));
     Log("hooked client UI loop at +0x%llX", static_cast<unsigned long long>(loop - base));
     return true;
@@ -1294,6 +1633,12 @@ const Config& CurrentConfig()
 void* CurrentClient()
 {
     return g_client;
+}
+
+uint32_t LocalPlayerId()
+{
+    uint32_t handle = g_client && At<void*>(g_client, kClientWorld) ? At<uint32_t>(g_client, kClientPlayer) : 0;
+    return handle ? (handle & 0x3f) + 1 : 0;
 }
 
 bool DescribeBase(BaseInfo& out, std::string& why)
@@ -1378,6 +1723,28 @@ bool SendRawCommand(const uint8_t* cmd)
     return true;
 }
 
+bool SendAltarUpgrade(uint32_t altarEntity, uint32_t recipe)
+{
+    alignas(8) altar_upgrade::Command cmd{};
+    if (!g_client || !g_originalDispatch || !altar_upgrade::Encode(altarEntity, recipe, cmd))
+        return false;
+    // Send() is intentionally limited to the 0x28-byte inventory command. CraftRecipe
+    // needs all 0x30 bytes, including its uint16 amount at +0x2c.
+    g_originalDispatch(g_client, reinterpret_cast<uint8_t*>(&cmd));
+    Log("altar upgrade recipe %u submitted for entity %u; native validation pending", recipe, altarEntity);
+    return true;
+}
+
+bool SendFlameUpgrade(uint32_t progressEntity, uint32_t recipe)
+{
+    alignas(8) altar_upgrade::Command cmd{};
+    if (!g_client || !g_originalDispatch || !altar_upgrade::EncodeFlame(progressEntity, recipe, cmd))
+        return false;
+    g_originalDispatch(g_client, reinterpret_cast<uint8_t*>(&cmd));
+    Log("Flame upgrade recipe %u submitted for progress entity %u; native validation pending", recipe, progressEntity);
+    return true;
+}
+
 bool SendChatLine(const char* text)
 {
     if (!g_client || !g_originalDispatch)
@@ -1396,6 +1763,33 @@ bool SendChatLine(const char* text)
 
 #endif
 
+bool SendHiddenLine(const char* text, uint8_t type)
+{
+    if (!g_client || !g_originalDispatch)
+        return false;
+    alignas(8) static uint8_t cmd[0x410];
+    memset(cmd, 0, sizeof(cmd));
+    size_t n = strlen(text);
+    if (n > 0x400)
+        n = 0x400;
+    cmd[0] = 0x74;
+    cmd[1] = type;
+    memcpy(cmd + 2, text, n);
+    *reinterpret_cast<uint16_t*>(cmd + 0x402) = static_cast<uint16_t>(n);
+    // The chat command sends only while the server allows text chat, or system lines: allow this
+    // one line too, so servers with text chat off still get it (as Embervale Teleport does).
+    if (!g_textChatAllowed) {
+        g_originalDispatch(g_client, cmd);
+        return true;
+    }
+    uint8_t& allowed = At<uint8_t>(g_client, g_textChatAllowed);
+    uint8_t saved = allowed;
+    allowed = 1;
+    g_originalDispatch(g_client, cmd);
+    allowed = saved;
+    return true;
+}
+
 std::string ChestLabelFor(uint32_t chest)
 {
     inv::Owner o;
@@ -1412,6 +1806,11 @@ void RequestDeposit(const Config& cfg)
     g_pending = cfg;
     g_requested = true;
     Log("deposit requested");
+}
+
+void* LastApp()
+{
+    return g_lastApp.load();
 }
 
 } // namespace client

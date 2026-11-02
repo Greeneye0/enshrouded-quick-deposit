@@ -15,6 +15,7 @@
 // in that build: 16 link ids, then 16 InventoryCategory bytes) is detected at runtime as the
 // chest type whose link ids are non-player entities that have an Inventory.
 #include <windows.h>
+#include <intrin.h>
 #include <atomic>
 #include <span>
 #include <cctype>
@@ -48,7 +49,7 @@ constexpr uint32_t kFirstNonPlayerId = 0x400; // player entities use ids 1..0x3f
 uint16_t g_typeInventory = 283;
 uint16_t g_typeSetup = 0;  // detected
 uint16_t g_typeHotbar = 0; // detected: player component with the hotbar page ids at +0xa0/+0xa4
-constexpr uint16_t kTypePosition = 133; // int64 x, y, z with 32 fraction bits (build 1269579)
+// kTypePosition (inventory.h): int64 x, y, z with 32 fraction bits (build 1269579)
 constexpr size_t kHotbarPageA = 0xa0;
 constexpr size_t kHotbarPageB = 0xa4;
 
@@ -56,9 +57,12 @@ constexpr size_t kItemCategory = 0xcc;
 constexpr size_t kItemWeaponType = 0xd0;
 constexpr size_t kItemAmmoType = 0xcd;
 constexpr size_t kItemMaxStack = 0x14;
+constexpr size_t kItemEquipType = 0xf4; // 16-byte reference, then the slot's number (measured: helmets,
+constexpr size_t kItemEquipSlot = 0x104; // gloves, legs, boots, chest pieces, rings, backpacks)
 constexpr size_t kItemDebugName = 0x820;
 constexpr size_t kItemName = 0x48; // 16-byte text key of the name the game shows
 constexpr uint8_t kCategoryWeapons = 2;
+constexpr uint8_t kCategoryEquipment = 1;
 
 constexpr int kMaxRegistries = 16;
 std::atomic<void*> g_seenLocal[kMaxRegistries];
@@ -203,16 +207,46 @@ std::unordered_map<uint32_t, std::string> g_shownNames; // item id -> name as sh
 std::vector<uint32_t> g_wantedNames;
 std::atomic<bool> g_anyWanted{false};
 
+std::atomic<const uint8_t*> g_locaDb{nullptr}; // the text database, as last seen while the UI was built
+std::atomic<uint8_t*> g_uiState{nullptr};      // *(G + 0xd0), as last seen while the UI was built
+
 bool LocaUsable()
 {
     __try {
-        return g_locaText && g_locaRoot && *g_locaRoot && *reinterpret_cast<void**>(static_cast<uint8_t*>(*g_locaRoot) + 0xd0);
+        if (!g_locaText || !g_locaRoot || !*g_locaRoot)
+            return false;
+        auto* ui = *reinterpret_cast<uint8_t**>(static_cast<uint8_t*>(*g_locaRoot) + 0xd0);
+        if (ui) {
+            g_uiState = ui;
+            g_locaDb = *reinterpret_cast<const uint8_t**>(ui + 0x33ce8);
+        }
+        return ui != nullptr;
     } __except (EXCEPTION_EXECUTE_HANDLER) {
         return false;
     }
 }
 
 // The item's name as the game shows it, looked up now (LocaUsable() first), or "".
+// The game's text marks some names for its own UI ("<lorename>Pikemead</lorename>'s Bulwark"):
+// tags of letters and '/' come out, any other '<' stays.
+void StripMarkup(char* s)
+{
+    char* w = s;
+    for (const char* r = s; *r;) {
+        if (*r == '<') {
+            const char* e = r + 1;
+            while (e - r < 32 && (isalpha(static_cast<unsigned char>(*e)) || *e == '/'))
+                ++e;
+            if (*e == '>' && e > r + 1) {
+                r = e + 1;
+                continue;
+            }
+        }
+        *w++ = *r++;
+    }
+    *w = 0;
+}
+
 bool LookupShown(const uint8_t* info, char* out, size_t size)
 {
     uint32_t key = 0x811c9dc5u;
@@ -228,6 +262,7 @@ bool LookupShown(const uint8_t* info, char* out, size_t size)
     } __except (EXCEPTION_EXECUTE_HANDLER) {
         return false;
     }
+    StripMarkup(out);
     return true;
 }
 
@@ -584,14 +619,15 @@ int FindPlainChests(uint32_t playerId, const float lo[3], const float hi[3], uin
     // Every inventory owner in the box whose pages are all storage: equipment, customization or
     // currency pages mean a player, an NPC or a mannequin. (Component type numbers change between
     // game sessions, so chests are not matched by their component types.)
-    uint32_t found[512];
-    int nf = FindContainers(lo, hi, found, max < 512 ? max : 512);
+    // Scanned in full: animals, NPCs and crafting stations are containers too.
+    static thread_local uint32_t found[2048];
+    int nf = FindContainers(lo, hi, found, 2048);
     int n = 0;
-    for (int i = 0; i < nf; ++i) {
+    for (int i = 0; i < nf && n < max; ++i) {
         Owner o;
         if (!ReadOwner(found[i], o))
             continue;
-        bool storage = true;
+        bool storage = IsStorageProp(found[i]);
         for (int p = 0; p < o.pageCount && storage; ++p)
             storage = o.pages[p].kind != PageKind::Equipment && o.pages[p].kind != PageKind::Customization &&
                       o.pages[p].kind != PageKind::Currency;
@@ -605,10 +641,37 @@ int FindPlainChests(uint32_t playerId, const float lo[3], const float hi[3], uin
     return n;
 }
 
+bool IsStorageProp(uint32_t entity)
+{
+    if (!g_registry || !entity)
+        return false;
+    uint16_t types[kComponentBits];
+    int k = EntityTypes(g_registry, entity, types, kComponentBits);
+    for (int i = 0; i < k; ++i) {
+        auto* data = static_cast<const uint32_t*>(Component(g_registry, types[i], entity));
+        uint32_t id = 0;
+        __try {
+            id = data ? *data : 0;
+        } __except (EXCEPTION_EXECUTE_HANDLER) {
+            id = 0;
+        }
+        if (!id)
+            continue;
+        ItemDesc d = Describe(id);
+        if (d.known && strncmp(d.name, "Prop Storage", 12) == 0 && strcmp(d.name, "Prop Storage Drop Station") != 0)
+            return true;
+    }
+    return false;
+}
+
 int KeepStorageChests(const uint32_t* magic, int magicCount, uint32_t* candidates, int n)
 {
-    // Types every magic chest has (bitset over the 640 component types)...
-    uint64_t required[kComponentBits / 64];
+    // A plain storage chest is a magic chest without the crafting-storage parts: the types every
+    // magic chest has, less a few (InventoryCraftingStock and its neighbour; 2 in build 1273043),
+    // and nothing a magic chest lacks but a custom name. A crafting station with an inventory has
+    // parts of its own. Type numbers change between sessions, so only the sets are compared.
+    constexpr int kMaxMissing = 3, kMaxExtra = 1;
+    uint64_t required[kComponentBits / 64], known[kComponentBits / 64] = {};
     memset(required, 0xFF, sizeof(required));
     int counted = 0;
     for (int m = 0; m < magicCount; ++m) {
@@ -619,17 +682,14 @@ int KeepStorageChests(const uint32_t* magic, int magicCount, uint32_t* candidate
         uint64_t have[kComponentBits / 64] = {};
         for (int i = 0; i < k; ++i)
             have[types[i] >> 6] |= 1ull << (types[i] & 63);
-        for (int w = 0; w < kComponentBits / 64; ++w)
+        for (int w = 0; w < kComponentBits / 64; ++w) {
             required[w] &= have[w];
+            known[w] |= have[w];
+        }
         ++counted;
     }
     if (!counted)
         return 0;
-    // ...minus the ones only magic chests have: InventoryCraftingStock (284) and type 134,
-    // which plain chests lack (measured in build 1269579).
-    static const uint16_t kMagicOnly[] = {284, 134};
-    for (uint16_t t : kMagicOnly)
-        required[t >> 6] &= ~(1ull << (t & 63));
 
     int kept = 0, skipped = 0;
     for (int c = 0; c < n; ++c) {
@@ -638,9 +698,13 @@ int KeepStorageChests(const uint32_t* magic, int magicCount, uint32_t* candidate
         uint64_t have[kComponentBits / 64] = {};
         for (int i = 0; i < k; ++i)
             have[types[i] >> 6] |= 1ull << (types[i] & 63);
-        bool chest = k > 0;
-        for (int w = 0; w < kComponentBits / 64 && chest; ++w)
-            chest = (have[w] & required[w]) == required[w];
+        int missing = 0, extra = 0;
+        for (int w = 0; w < kComponentBits / 64; ++w) {
+            missing += static_cast<int>(__popcnt64(required[w] & ~have[w]));
+            extra += static_cast<int>(__popcnt64(have[w] & ~known[w]));
+        }
+        bool chest = k > 0 && missing <= kMaxMissing && extra <= kMaxExtra && g_typeSetup &&
+                     have[g_typeSetup >> 6] >> (g_typeSetup & 63) & 1;
         if (chest)
             candidates[kept++] = candidates[c];
         else
@@ -662,41 +726,6 @@ void TypeList(uint32_t entity, char* out, int size)
     out[0] = 0;
     for (int i = 0; i < n && len < size - 8; ++i)
         len += wsprintfA(out + len, "%u ", types[i]);
-}
-
-// "Weapon_T1_1H_WandEpic_01_Fire" -> "Wand Epic Fire", "Ring_T1_Ring_of_Mana" -> "Ring of Mana":
-// drops the asset group (first token), tier, hand, level and numbering tokens of the internal
-// name and splits run-together words.
-void PrettyName(const char* raw, char* out, size_t size)
-{
-    static const char* const groups[] = {"Material", "Weapon", "Food", "Build", "Block", "Ammo", "Consumable",
-                                         "Armor", "Tool", "Ring", "Vanity", "Shield", "Blueprint"};
-    static const char* const anywhere[] = {"TerrainMaterial", "Voxel", "CRAFTING", "1H", "2H", "raw", "processed", "Loot"};
-    char buf[96];
-    strncpy_s(buf, raw, _TRUNCATE);
-    size_t len = 0;
-    out[0] = 0;
-    char* ctx = nullptr;
-    bool first = true;
-    for (char* tok = strtok_s(buf, "_", &ctx); tok; tok = strtok_s(nullptr, "_", &ctx), first = false) {
-        bool skip = (tok[0] == 'T' && (isdigit(static_cast<unsigned char>(tok[1])) || tok[1] == 'X')) ||
-                    strncmp(tok, "lvl", 3) == 0 || isdigit(static_cast<unsigned char>(tok[0]));
-        for (const char* g : groups)
-            skip |= first && strcmp(tok, g) == 0;
-        for (const char* d : anywhere)
-            skip |= strcmp(tok, d) == 0;
-        if (skip)
-            continue;
-        for (const char* c = tok; *c && len + 2 < size; ++c) {
-            bool wordStart = c == tok || (isupper(static_cast<unsigned char>(*c)) && islower(static_cast<unsigned char>(c[-1])));
-            if (wordStart && len)
-                out[len++] = ' ';
-            out[len++] = *c;
-        }
-        out[len] = 0;
-    }
-    if (!out[0])
-        strncpy_s(out, size, raw, _TRUNCATE);
 }
 
 bool Position(uint32_t entity, float out[3])
@@ -774,6 +803,95 @@ bool CustomName(void* client, uint32_t entity, char* out, size_t size)
     return false;
 }
 
+#ifdef QD_BRIDGE
+namespace {
+// One text field of an entry: where it is, or len 0.
+struct RawHit {
+    uint32_t key;
+    int field;
+    const char* text;
+    uint32_t len;
+};
+
+// A BlobString at p (int32 offset relative to p, uint32 length) that reads as text.
+bool BlobText(const uint8_t* p, const char*& text, uint32_t& len)
+{
+    int32_t rel = *reinterpret_cast<const int32_t*>(p);
+    len = *reinterpret_cast<const uint32_t*>(p + 4);
+    if (!rel || !len || len > 400)
+        return false;
+    text = reinterpret_cast<const char*>(p + rel);
+    for (uint32_t i = 0; i < len; ++i)
+        if (static_cast<unsigned char>(text[i]) < 0x20 && text[i] != '\n')
+            return false;
+    return true;
+}
+
+bool Contains(const char* text, uint32_t len, const char* needle, size_t n)
+{
+    for (uint32_t i = 0; n && i + n <= len; ++i)
+        if (memcmp(text + i, needle, n) == 0)
+            return true;
+    return false;
+}
+
+// Raw reads only, so the fault handler needs no unwinding. Returns how many were written, -1 on
+// a fault.
+int SafeLocaScan(const uint8_t* db, int t, const char* needle, RawHit* out, int max)
+{
+    int n = 0;
+    size_t nlen = strlen(needle);
+    __try {
+        const uint8_t* blob = *reinterpret_cast<uint8_t* const*>(db + t + 0x20);
+        if (!blob)
+            return 0;
+        int32_t rel = *reinterpret_cast<const int32_t*>(blob);
+        uint32_t count = *reinterpret_cast<const uint32_t*>(blob + 4);
+        const uint8_t* e = blob + rel;
+        for (uint32_t i = 0; i < count && n < max; ++i, e += 0x18)
+            for (int f = 4; f <= 0x10; f += 4) {
+                const char* text;
+                uint32_t len;
+                if (BlobText(e + f, text, len)) {
+                    if (Contains(text, len, needle, nlen))
+                        out[n++] = {*reinterpret_cast<const uint32_t*>(e), f, text, len};
+                    break;
+                }
+            }
+    } __except (EXCEPTION_EXECUTE_HANDLER) {
+        return -1;
+    }
+    return n;
+}
+} // namespace
+
+std::vector<LocaHit> LocaFind(const char* needle, int max)
+{
+    std::vector<LocaHit> hits;
+    LocaUsable();
+    const uint8_t* db = g_locaDb.load();
+    if (!db) {
+        hits.push_back({-2, 0, -1, "<text database not seen yet>"});
+        return hits;
+    }
+    static RawHit raw[200];
+    for (int t : {0x40, 0x90, 0xe0}) {
+        int left = max - static_cast<int>(hits.size());
+        int n = SafeLocaScan(db, t, needle, raw, left < 200 ? left : 200);
+        if (n < 0)
+            hits.push_back({t, 0, -1, "<fault>"});
+        for (int i = 0; i < n; ++i)
+            hits.push_back({t, raw[i].key, raw[i].field, std::string(raw[i].text, raw[i].len)});
+    }
+    return hits;
+}
+#endif
+
+const uint8_t* RawItemInfo(uint32_t itemId)
+{
+    return LookupItem(itemId);
+}
+
 ItemDesc Describe(uint32_t itemId)
 {
     ItemDesc d = {};
@@ -789,6 +907,10 @@ ItemDesc Describe(uint32_t itemId)
         d.maxStack = *reinterpret_cast<uint16_t*>(info + kItemMaxStack);
         if (d.category == kCategoryWeapons)
             memcpy(d.weaponType, info + kItemWeaponType, sizeof(d.weaponType));
+        if (d.category == kCategoryEquipment) {
+            memcpy(d.equipType, info + kItemEquipType, sizeof(d.equipType));
+            d.equipSlot = info[kItemEquipSlot];
+        }
         // BlobString: int32 offset (relative to the field) + uint32 length
         int32_t rel = *reinterpret_cast<int32_t*>(info + kItemDebugName);
         uint32_t len = *reinterpret_cast<uint32_t*>(info + kItemDebugName + 4);
@@ -826,8 +948,62 @@ ItemDesc Describe(uint32_t itemId)
     return d;
 }
 
+// The tooltip's type line of equipment, by the game's text ids (build 1273043; the ids are the
+// same in every language): found in the game's type name table next to "Armor Types".
+struct TypeNameId {
+    uint8_t slot; // equipSlot, 0: any equipment
+    uint32_t key;
+};
+const TypeNameId kTypeNameIds[] = {
+    {0x0d, 758297709u},  // Head Armor
+    {0x0e, 3744142676u}, // Upper Body Armor
+    {0x0f, 2659661871u}, // Arm Armor
+    {0x10, 324810057u},  // Lower Body Armor
+    {0x11, 319253163u},  // Foot Armor
+    {0x12, 326184360u},  // Shield
+    {0x25, 1386167737u}, // Ring
+    {0x25, 3760203124u}, // Accessory
+    {0x26, 977743583u},  // Backpack
+    {0, 4097264558u},    // Equippable
+};
+std::string g_typeNames[sizeof(kTypeNameIds) / sizeof(kTypeNameIds[0])];
+std::atomic<bool> g_typeNamesDone{false};
+
+bool LookupText(uint32_t key, char* out, size_t size)
+{
+    GameText t{"", 0, 0xcbf29ce484222325ull};
+    __try {
+        g_locaText(&t, key);
+        if (!t.utf8 || !t.len || t.len >= size)
+            return false;
+        memcpy(out, t.utf8, t.len);
+        out[t.len] = 0;
+    } __except (EXCEPTION_EXECUTE_HANDLER) {
+        return false;
+    }
+    StripMarkup(out);
+    return true;
+}
+
+void ResolveTypeNames()
+{
+    AcquireSRWLockExclusive(&g_namesLock);
+    int found = 0;
+    for (size_t i = 0; i < sizeof(kTypeNameIds) / sizeof(kTypeNameIds[0]); ++i) {
+        char text[96];
+        g_typeNames[i] = LookupText(kTypeNameIds[i].key, text, sizeof(text)) ? text : "";
+        found += g_typeNames[i].empty() ? 0 : 1;
+    }
+    ReleaseSRWLockExclusive(&g_namesLock);
+    g_typeNamesDone = true;
+    Log("item type names: %d of %d from the game's text (%s, %s)", found,
+        static_cast<int>(sizeof(kTypeNameIds) / sizeof(kTypeNameIds[0])), g_typeNames[0].c_str(), g_typeNames[4].c_str());
+}
+
 void ResolveNames()
 {
+    if (!g_typeNamesDone && LocaUsable())
+        ResolveTypeNames();
     if (!g_anyWanted || !LocaUsable())
         return;
     AcquireSRWLockExclusive(&g_namesLock);
@@ -842,12 +1018,24 @@ void ResolveNames()
     ReleaseSRWLockExclusive(&g_namesLock);
 }
 
-const char* CategoryName(uint8_t category)
+std::vector<std::string> TypeNames(uint8_t slot)
 {
-    static const char* const names[] = {"Customization", "Equipment", "Weapons", "Tools", "Instrument", "FishingRod",
-                                        "BuildTools", "Consumables", "Ammunition", "Materials", "Blueprints", "Currency",
-                                        "Collectibles", "AnimalFood", "PetFood", "WeaponGem", "ColorPalette"};
-    return category < sizeof(names) / sizeof(names[0]) ? names[category] : "?";
+    std::vector<std::string> out;
+    AcquireSRWLockShared(&g_namesLock);
+    for (size_t i = 0; i < sizeof(kTypeNameIds) / sizeof(kTypeNameIds[0]); ++i)
+        if (kTypeNameIds[i].slot == slot && !g_typeNames[i].empty())
+            out.push_back(g_typeNames[i]);
+    ReleaseSRWLockShared(&g_namesLock);
+    return out;
+}
+
+std::vector<uint8_t> TypeSlots()
+{
+    std::vector<uint8_t> out;
+    for (const TypeNameId& t : kTypeNameIds)
+        if (t.slot && std::find(out.begin(), out.end(), t.slot) == out.end())
+            out.push_back(t.slot);
+    return out;
 }
 
 void* InspectRegistry(uint32_t playerId)
@@ -964,6 +1152,11 @@ void UseKept(const GreeneyeHost* host)
 {
     g_seen = {static_cast<std::atomic<void*>*>(host->keep("quick-deposit.registries", sizeof(g_seenLocal))), kMaxRegistries};
     g_itemDbs = {static_cast<std::atomic<void*>*>(host->keep("quick-deposit.itemdbs", sizeof(g_itemDbsLocal))), kMaxItemDbs};
+}
+
+void* UiState()
+{
+    return g_uiState.load();
 }
 
 } // namespace inv

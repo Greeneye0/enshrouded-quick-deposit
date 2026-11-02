@@ -1,9 +1,9 @@
 {
     "id": "quick-deposit",
     "name": "Quick Deposit",
-    "version": "1.3.7",
+    "version": "1.3.18",
     "dll": "quick-deposit.dll",
-    "side": "client",
+    "side": "both",
     "api": 1,
     "description": "G twice in your inventory: sorts your backpack into the right chests in your base.",
     "author": "GreeneyeDS"

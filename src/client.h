@@ -42,6 +42,11 @@ bool DescribeBase(BaseInfo& out, std::string& why);
 // Starts a deposit with these settings; false (why) if it can't start.
 bool StartDeposit(const Config& cfg, std::string& why);
 bool DepositBusy();
+// Your player entity (0 outside a world). Game (UI) thread.
+uint32_t LocalPlayerId();
+// Sends a chat line of this entry type to the server (UI command 0x74), also where the server
+// has text chat off. UI thread.
+bool SendHiddenLine(const char* text, uint8_t type);
 uint64_t DepositRunsFinished();
 const std::vector<std::string>& LastReport();
 
@@ -57,6 +62,15 @@ bool TransferSlot(uint32_t fromPage, int fromSlot, uint32_t toPage, int toSlot);
 bool SendChatLine(const char* text);
 // Dev only: sends a raw 0x28-byte UI command (experiments with the transfer command's fields).
 bool SendRawCommand(const uint8_t* cmd);
+// Dev only: one of the three installed altar expansion recipes, amount one. The bridge
+// must validate the test area and nearby altar identity first. No level/cost bypass.
+bool SendAltarUpgrade(uint32_t altarEntity, uint32_t recipe);
+// Dev only: the installed Flame1->2 or2->3 recipe at its native progress entity.
+// The bridge must verify current level and a nearby altar in the test area.
+bool SendFlameUpgrade(uint32_t progressEntity, uint32_t recipe);
 #endif
+
+// The app object the UI loop was last called with (dev inspection).
+void* LastApp();
 
 } // namespace client

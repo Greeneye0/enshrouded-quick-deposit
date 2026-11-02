@@ -1,7 +1,7 @@
 // Client -> host network events (build 1269579).
 //
 // 140955400 AllocEvent(queue, typeHash, size, flags): reserves an event in the world's outgoing
-//   queue; 140955480 is the same with queue = *(world + 0x1ccfcb0).
+//   queue; 140955480 is the same with queue = *(world + 0x15d18b0).
 // Type hashes are FNV-1a 32 of the full type name.
 #include <windows.h>
 #include <cstring>
@@ -18,7 +18,7 @@ AllocEventFn g_allocEvent = nullptr;
 constexpr size_t kClientWorld = 0x47d4e0;
 constexpr size_t kClientEventHeader = 0x47d4c8;
 constexpr size_t kClientPlayer = 0x466b44;
-constexpr size_t kWorldEventQueue = 0x1ccfcb0;
+constexpr size_t kWorldEventQueue = 0x15d18b0; // 0x1ccfcb0 before the 2026-11-02 patch
 
 constexpr uint32_t kAcceptOfferedInteraction = 0x82e404b2; // keen::ecs::AcceptOfferedInteractionEvent
 constexpr uint32_t kAcceptOfferedInteractionSize = 0x18;

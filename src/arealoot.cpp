@@ -291,7 +291,7 @@ bool Init()
         return false;
     }
     memcpy(g_collectOriginal, g_collectCall, 5);
-    g_entityIdOf = reinterpret_cast<EntityIdOfFn>(FindUnique("8B 41 08 4C 8B C2 85 C0 75 ?? 89 02 48 8B C2 C3 8D 50 FF 48 8B 01 48 03 D2 48 8B 88 28 08 00 00 8B 04 D1"));
+    g_entityIdOf = reinterpret_cast<EntityIdOfFn>(FindUnique("8B 41 08 4C 8B C2 85 C0 75 ?? 89 02 48 8B C2 C3 8D 50 FF 48 8B 01 48 03 D2 48 8B 88 ?? 08 00 00 8B 04 D1"));
     g_spatialQuery = reinterpret_cast<SpatialQueryFn>(FindUnique("40 53 0F B6 44 24 38 4D 8B D1 44 8B 4C 24 30"));
     g_allocEvent = reinterpret_cast<AllocEventFn>(FindUnique("48 83 EC 28 4C 8B D9 41 81 F8 00 01 00 00"));
     g_knowledgeOps = reinterpret_cast<KnowledgeOpsFn>(FindUnique("48 89 5C 24 18 48 89 7C 24 20 41 56 48 83 EC 30 4C 8B F1 41 8B D9"));

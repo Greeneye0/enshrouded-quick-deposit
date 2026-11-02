@@ -1,0 +1,31 @@
+# Holdout: written after tuning on expect.tsv, before running these items, to check the rules
+# generalize. Never tune against this file; add new holdout items instead. Item <TAB> chest.
+Iron Dust	Stone and Metal
+Drak Scales	Critter & Heads
+Excellent Ectoplasm	Bones & Ectoplasm
+Ectoplasm Crystal	Bones & Ectoplasm
+Green Fabric	Cloth & Leather
+Blackmire Heartwood	Wood
+Cyclops Head	Critter & Heads
+Scavenger Tyrant Head	Critter & Heads
+Flammable Goo	Misc.
+Cursed Shroud Sack	Shroud Stuff
+Grilled Game	Cooked Food
+Mushroom Omelette	Cooked Food
+Strawberry Cake	Cooked Food
+Sushi	Cooked Food
+Meat Wrap	Cooked Food
+Ultimate Health Potion	Potions
+Ancient Mana Potion	Potions
+Hemotoxin Antidote	Potions
+Greater Shroud Survival Flask	Potions
+Golden Steel Arrow	Bows & Arrows
+Poisoned Iron Arrow	Bows & Arrows
+Blizzard I	Staves & Spells
+Chain Heal II	Staves & Spells
+Epic Fishing Bait I	Fish Stuff
+Simple Fishing Bait	Fish Stuff
+Prawn Fossil	Fossils
+Big Ammonite	Fossils
+Tome of Agony	Books & Gold Coins
+Gem of Agility	Gems

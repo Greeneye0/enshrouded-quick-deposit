@@ -1,7 +1,7 @@
 // Key hints in the hint bar (build 1273043).
 //
 // 140cd5af0 doActionHints(span{entries, count}, options) draws the bar at the bottom of a menu
-// screen; screens collect their entries in a list at *(G + 0xd0) + 0x32e18 (16 x 0x48 bytes,
+// screen; screens collect their entries in a list at *(G + 0xd0) + 0x32e30 (16 x 0x48 bytes,
 // count byte at +0x480) and pass it as the span. Each entry is drawn by
 // 140cd5300 doActionHint(entry, params):
 //   +0x00 u8 input action: the key glyph comes from its binding record,
@@ -14,13 +14,15 @@
 // such entry: there another enabled entry is copied and the hints go before the last two. A hint
 // whose key differs from its copied action's (keepKey; G on the chest screen) gets it this way:
 // while that one entry draws, the action's binding record says that key, and is put back right
-// after. Only while your backpack is on screen.
+// after. Only in the inventory screen and with a chest open, not in other screens that show
+// backpack slots (the equipment slot picker). The text follows the game's language (lang.h).
 #include <windows.h>
 #include <cstdio>
 #include <cstring>
 #include "../../common/greeneye.h"
 #include "hints.h"
 #include "keep.h"
+#include "lang.h"
 #include "log.h"
 #include "scan.h"
 
@@ -70,16 +72,28 @@ Text MakeText(const char* utf8)
     return t;
 }
 
+// The text in the current language, made again until the language is decided.
+const Text& HintText(lang::Str s, Text& cache, bool& final)
+{
+    if (!final) {
+        cache = MakeText(lang::T(s));
+        final = lang::Decided();
+    }
+    return cache;
+}
+
 const Text& DepositText()
 {
-    static const Text t = MakeText("Twice: Quick Deposit");
-    return t;
+    static Text t;
+    static bool final = false;
+    return HintText(lang::Str::DepositHint, t, final);
 }
 
 const Text& KeepText()
 {
-    static const Text t = MakeText("Keep in Backpack");
-    return t;
+    static Text t;
+    static bool final = false;
+    return HintText(lang::Str::KeepHint, t, final);
 }
 
 // The HID usage code the game's bindings use for a virtual key: letters, digits, F1-F12.
@@ -172,11 +186,22 @@ void Describe(const Span* span)
 }
 #endif
 
+// When a bar with "Sort Inventory" last drew: the inventory screen is up, and the item card's own
+// bar (drawn without it) gets the hints too.
+ULONGLONG g_sortDrawnAt = 0;
+constexpr ULONGLONG kScreenStaleMs = 250;
+
 void HintsBody(Span* span, void* options)
 {
     g_swapCount = 0;
     bool usable = span && span->data && span->count && span->count <= kMaxEntries && keep::BackpackShown();
     int sort = usable ? SortEntry(span) : -1;
+    ULONGLONG now = GetTickCount64();
+    if (sort >= 0)
+        g_sortDrawnAt = now;
+    // Backpack slots also show in other screens (the equipment slot picker): only the inventory
+    // and an open chest get the hints.
+    usable = usable && (now - g_sortDrawnAt <= kScreenStaleMs || keep::ChestShown());
     int copy = sort >= 0 ? sort : usable ? TemplateEntry(span) : -1;
     if (copy < 0 || (!g_depositHint && !g_keepHid)) {
         g_originalHints(span, options);

@@ -1,0 +1,6808 @@
+{
+ "player": [
+  3229.19,
+  834.5,
+  2060.35
+ ],
+ "chests": [
+  {
+   "entity": 1342,
+   "label": "Cooked Food",
+   "named": true,
+   "position": [
+    3221,
+    836.5,
+    2062.49
+   ],
+   "slotsTotal": 32,
+   "stacks": [
+    {
+     "page": 1342,
+     "slot": 0,
+     "itemId": 2090825266,
+     "count": 8
+    },
+    {
+     "page": 1342,
+     "slot": 1,
+     "itemId": 2840500800,
+     "count": 2
+    },
+    {
+     "page": 1342,
+     "slot": 2,
+     "itemId": 3286272712,
+     "count": 3
+    }
+   ]
+  },
+  {
+   "entity": 1218,
+   "label": "Misc.",
+   "named": true,
+   "position": [
+    3221,
+    835.5,
+    2062.49
+   ],
+   "slotsTotal": 32,
+   "stacks": [
+    {
+     "page": 1218,
+     "slot": 0,
+     "itemId": 1326647808,
+     "count": 5
+    },
+    {
+     "page": 1218,
+     "slot": 1,
+     "itemId": 1326647808,
+     "count": 5
+    },
+    {
+     "page": 1218,
+     "slot": 2,
+     "itemId": 1326647808,
+     "count": 5
+    },
+    {
+     "page": 1218,
+     "slot": 3,
+     "itemId": 4167058878,
+     "count": 1
+    },
+    {
+     "page": 1218,
+     "slot": 4,
+     "itemId": 957162158,
+     "count": 119
+    },
+    {
+     "page": 1218,
+     "slot": 5,
+     "itemId": 1212327967,
+     "count": 76
+    },
+    {
+     "page": 1218,
+     "slot": 6,
+     "itemId": 1451410091,
+     "count": 79
+    },
+    {
+     "page": 1218,
+     "slot": 7,
+     "itemId": 1503622318,
+     "count": 97
+    },
+    {
+     "page": 1219,
+     "slot": 0,
+     "itemId": 1549788273,
+     "count": 132
+    },
+    {
+     "page": 1219,
+     "slot": 1,
+     "itemId": 1830151622,
+     "count": 18
+    },
+    {
+     "page": 1219,
+     "slot": 2,
+     "itemId": 1862351329,
+     "count": 131
+    },
+    {
+     "page": 1219,
+     "slot": 3,
+     "itemId": 2371777842,
+     "count": 2
+    },
+    {
+     "page": 1219,
+     "slot": 4,
+     "itemId": 3403995938,
+     "count": 44
+    },
+    {
+     "page": 1219,
+     "slot": 5,
+     "itemId": 3838906683,
+     "count": 67
+    },
+    {
+     "page": 1219,
+     "slot": 6,
+     "itemId": 4109728689,
+     "count": 206
+    },
+    {
+     "page": 1219,
+     "slot": 7,
+     "itemId": 1461371688,
+     "count": 1
+    },
+    {
+     "page": 1220,
+     "slot": 0,
+     "itemId": 1536371128,
+     "count": 53
+    },
+    {
+     "page": 1220,
+     "slot": 1,
+     "itemId": 1175242603,
+     "count": 48
+    },
+    {
+     "page": 1220,
+     "slot": 2,
+     "itemId": 1522120746,
+     "count": 48
+    },
+    {
+     "page": 1220,
+     "slot": 3,
+     "itemId": 786589544,
+     "count": 3
+    },
+    {
+     "page": 1220,
+     "slot": 4,
+     "itemId": 3047029804,
+     "count": 5
+    },
+    {
+     "page": 1220,
+     "slot": 5,
+     "itemId": 2302389683,
+     "count": 8
+    },
+    {
+     "page": 1220,
+     "slot": 6,
+     "itemId": 2341333485,
+     "count": 158
+    },
+    {
+     "page": 1220,
+     "slot": 7,
+     "itemId": 3749540900,
+     "count": 2
+    },
+    {
+     "page": 1221,
+     "slot": 0,
+     "itemId": 649108902,
+     "count": 2
+    }
+   ]
+  },
+  {
+   "entity": 1346,
+   "label": "Fish Stuff",
+   "named": true,
+   "position": [
+    3222,
+    836.5,
+    2062.49
+   ],
+   "slotsTotal": 32,
+   "stacks": [
+    {
+     "page": 1346,
+     "slot": 0,
+     "itemId": 425570534,
+     "count": 1
+    },
+    {
+     "page": 1346,
+     "slot": 1,
+     "itemId": 2342031255,
+     "count": 170
+    },
+    {
+     "page": 1346,
+     "slot": 2,
+     "itemId": 1014899877,
+     "count": 99
+    },
+    {
+     "page": 1346,
+     "slot": 3,
+     "itemId": 1014899877,
+     "count": 250
+    },
+    {
+     "page": 1346,
+     "slot": 4,
+     "itemId": 1014899877,
+     "count": 250
+    },
+    {
+     "page": 1346,
+     "slot": 5,
+     "itemId": 1014899877,
+     "count": 250
+    },
+    {
+     "page": 1346,
+     "slot": 6,
+     "itemId": 2201448182,
+     "count": 20
+    },
+    {
+     "page": 1346,
+     "slot": 7,
+     "itemId": 1014899877,
+     "count": 250
+    }
+   ]
+  },
+  {
+   "entity": 1338,
+   "label": "Vegetarian Food",
+   "named": true,
+   "position": [
+    3220,
+    836.5,
+    2062.47
+   ],
+   "slotsTotal": 32,
+   "stacks": [
+    {
+     "page": 1338,
+     "slot": 0,
+     "itemId": 227143323,
+     "count": 20
+    },
+    {
+     "page": 1338,
+     "slot": 1,
+     "itemId": 227143323,
+     "count": 20
+    },
+    {
+     "page": 1338,
+     "slot": 2,
+     "itemId": 227143323,
+     "count": 20
+    },
+    {
+     "page": 1338,
+     "slot": 3,
+     "itemId": 227143323,
+     "count": 3
+    },
+    {
+     "page": 1338,
+     "slot": 4,
+     "itemId": 443792978,
+     "count": 48
+    },
+    {
+     "page": 1338,
+     "slot": 5,
+     "itemId": 1896276940,
+     "count": 11
+    },
+    {
+     "page": 1338,
+     "slot": 6,
+     "itemId": 1511796527,
+     "count": 20
+    },
+    {
+     "page": 1338,
+     "slot": 7,
+     "itemId": 1511796527,
+     "count": 13
+    },
+    {
+     "page": 1339,
+     "slot": 0,
+     "itemId": 2824141465,
+     "count": 20
+    },
+    {
+     "page": 1339,
+     "slot": 1,
+     "itemId": 2824141465,
+     "count": 20
+    },
+    {
+     "page": 1339,
+     "slot": 2,
+     "itemId": 3173308572,
+     "count": 14
+    },
+    {
+     "page": 1339,
+     "slot": 3,
+     "itemId": 169532188,
+     "count": 26
+    },
+    {
+     "page": 1339,
+     "slot": 4,
+     "itemId": 2824141465,
+     "count": 17
+    }
+   ]
+  },
+  {
+   "entity": 1222,
+   "label": "Bones & Ectoplasm",
+   "named": true,
+   "position": [
+    3222,
+    835.5,
+    2062.49
+   ],
+   "slotsTotal": 32,
+   "stacks": [
+    {
+     "page": 1222,
+     "slot": 0,
+     "itemId": 2053375978,
+     "count": 250
+    },
+    {
+     "page": 1222,
+     "slot": 1,
+     "itemId": 2053375978,
+     "count": 250
+    },
+    {
+     "page": 1222,
+     "slot": 2,
+     "itemId": 2053375978,
+     "count": 250
+    },
+    {
+     "page": 1222,
+     "slot": 3,
+     "itemId": 2053375978,
+     "count": 250
+    },
+    {
+     "page": 1222,
+     "slot": 4,
+     "itemId": 2053375978,
+     "count": 250
+    },
+    {
+     "page": 1222,
+     "slot": 5,
+     "itemId": 2053375978,
+     "count": 250
+    },
+    {
+     "page": 1222,
+     "slot": 6,
+     "itemId": 2053375978,
+     "count": 250
+    },
+    {
+     "page": 1222,
+     "slot": 7,
+     "itemId": 2053375978,
+     "count": 250
+    },
+    {
+     "page": 1223,
+     "slot": 0,
+     "itemId": 2053375978,
+     "count": 250
+    },
+    {
+     "page": 1223,
+     "slot": 1,
+     "itemId": 2053375978,
+     "count": 250
+    },
+    {
+     "page": 1223,
+     "slot": 2,
+     "itemId": 2053375978,
+     "count": 250
+    },
+    {
+     "page": 1223,
+     "slot": 3,
+     "itemId": 2053375978,
+     "count": 250
+    },
+    {
+     "page": 1223,
+     "slot": 4,
+     "itemId": 2053375978,
+     "count": 250
+    },
+    {
+     "page": 1223,
+     "slot": 5,
+     "itemId": 2053375978,
+     "count": 250
+    },
+    {
+     "page": 1223,
+     "slot": 6,
+     "itemId": 2053375978,
+     "count": 250
+    },
+    {
+     "page": 1223,
+     "slot": 7,
+     "itemId": 2053375978,
+     "count": 180
+    },
+    {
+     "page": 1224,
+     "slot": 0,
+     "itemId": 2617088387,
+     "count": 500
+    },
+    {
+     "page": 1224,
+     "slot": 1,
+     "itemId": 2617088387,
+     "count": 409
+    },
+    {
+     "page": 1224,
+     "slot": 2,
+     "itemId": 2982735558,
+     "count": 240
+    },
+    {
+     "page": 1224,
+     "slot": 3,
+     "itemId": 2982735558,
+     "count": 217
+    },
+    {
+     "page": 1224,
+     "slot": 4,
+     "itemId": 2956062198,
+     "count": 15
+    },
+    {
+     "page": 1224,
+     "slot": 5,
+     "itemId": 3073226096,
+     "count": 23
+    },
+    {
+     "page": 1224,
+     "slot": 7,
+     "itemId": 3095665634,
+     "count": 54
+    }
+   ]
+  },
+  {
+   "entity": 1214,
+   "label": "Cloth & Leather",
+   "named": true,
+   "position": [
+    3220,
+    835.5,
+    2062.49
+   ],
+   "slotsTotal": 32,
+   "stacks": [
+    {
+     "page": 1214,
+     "slot": 0,
+     "itemId": 419344916,
+     "count": 250
+    },
+    {
+     "page": 1214,
+     "slot": 1,
+     "itemId": 419344916,
+     "count": 72
+    },
+    {
+     "page": 1214,
+     "slot": 2,
+     "itemId": 661026568,
+     "count": 250
+    },
+    {
+     "page": 1214,
+     "slot": 3,
+     "itemId": 661026568,
+     "count": 250
+    },
+    {
+     "page": 1214,
+     "slot": 4,
+     "itemId": 661026568,
+     "count": 250
+    },
+    {
+     "page": 1214,
+     "slot": 5,
+     "itemId": 661026568,
+     "count": 250
+    },
+    {
+     "page": 1214,
+     "slot": 6,
+     "itemId": 984234407,
+     "count": 250
+    },
+    {
+     "page": 1214,
+     "slot": 7,
+     "itemId": 984234407,
+     "count": 250
+    },
+    {
+     "page": 1215,
+     "slot": 0,
+     "itemId": 984234407,
+     "count": 250
+    },
+    {
+     "page": 1215,
+     "slot": 1,
+     "itemId": 984234407,
+     "count": 68
+    },
+    {
+     "page": 1215,
+     "slot": 2,
+     "itemId": 1496290527,
+     "count": 250
+    },
+    {
+     "page": 1215,
+     "slot": 3,
+     "itemId": 1496290527,
+     "count": 250
+    },
+    {
+     "page": 1215,
+     "slot": 4,
+     "itemId": 1496290527,
+     "count": 250
+    },
+    {
+     "page": 1215,
+     "slot": 5,
+     "itemId": 1496290527,
+     "count": 250
+    },
+    {
+     "page": 1215,
+     "slot": 6,
+     "itemId": 1496290527,
+     "count": 250
+    },
+    {
+     "page": 1215,
+     "slot": 7,
+     "itemId": 1496290527,
+     "count": 250
+    },
+    {
+     "page": 1216,
+     "slot": 0,
+     "itemId": 1496290527,
+     "count": 203
+    },
+    {
+     "page": 1216,
+     "slot": 1,
+     "itemId": 1564406835,
+     "count": 250
+    },
+    {
+     "page": 1216,
+     "slot": 2,
+     "itemId": 1564406835,
+     "count": 250
+    },
+    {
+     "page": 1216,
+     "slot": 3,
+     "itemId": 1564406835,
+     "count": 250
+    },
+    {
+     "page": 1216,
+     "slot": 4,
+     "itemId": 1564406835,
+     "count": 250
+    },
+    {
+     "page": 1216,
+     "slot": 5,
+     "itemId": 1564406835,
+     "count": 178
+    },
+    {
+     "page": 1216,
+     "slot": 6,
+     "itemId": 1815424180,
+     "count": 250
+    },
+    {
+     "page": 1216,
+     "slot": 7,
+     "itemId": 1815424180,
+     "count": 250
+    },
+    {
+     "page": 1217,
+     "slot": 0,
+     "itemId": 1815424180,
+     "count": 106
+    },
+    {
+     "page": 1217,
+     "slot": 1,
+     "itemId": 2845598712,
+     "count": 8
+    },
+    {
+     "page": 1217,
+     "slot": 2,
+     "itemId": 3420500473,
+     "count": 128
+    },
+    {
+     "page": 1217,
+     "slot": 3,
+     "itemId": 4135223598,
+     "count": 9
+    },
+    {
+     "page": 1217,
+     "slot": 4,
+     "itemId": 661026568,
+     "count": 10
+    }
+   ]
+  },
+  {
+   "entity": 1044,
+   "label": "Terrain & Roof",
+   "named": true,
+   "position": [
+    3220,
+    834.5,
+    2062.49
+   ],
+   "slotsTotal": 32,
+   "stacks": [
+    {
+     "page": 1044,
+     "slot": 0,
+     "itemId": 196827131,
+     "count": 65
+    },
+    {
+     "page": 1044,
+     "slot": 1,
+     "itemId": 1176719610,
+     "count": 541
+    },
+    {
+     "page": 1044,
+     "slot": 2,
+     "itemId": 1406367026,
+     "count": 597
+    },
+    {
+     "page": 1044,
+     "slot": 3,
+     "itemId": 1699388154,
+     "count": 802
+    },
+    {
+     "page": 1044,
+     "slot": 4,
+     "itemId": 2041116756,
+     "count": 2843
+    },
+    {
+     "page": 1044,
+     "slot": 5,
+     "itemId": 2175686957,
+     "count": 5000
+    },
+    {
+     "page": 1044,
+     "slot": 6,
+     "itemId": 2175686957,
+     "count": 3548
+    },
+    {
+     "page": 1044,
+     "slot": 7,
+     "itemId": 2871749713,
+     "count": 1142
+    },
+    {
+     "page": 1045,
+     "slot": 0,
+     "itemId": 447697249,
+     "count": 74
+    },
+    {
+     "page": 1045,
+     "slot": 1,
+     "itemId": 459345780,
+     "count": 50
+    },
+    {
+     "page": 1045,
+     "slot": 2,
+     "itemId": 760251531,
+     "count": 71
+    },
+    {
+     "page": 1045,
+     "slot": 3,
+     "itemId": 1181280513,
+     "count": 1000
+    },
+    {
+     "page": 1045,
+     "slot": 4,
+     "itemId": 1181280513,
+     "count": 968
+    },
+    {
+     "page": 1045,
+     "slot": 5,
+     "itemId": 1257792166,
+     "count": 1000
+    },
+    {
+     "page": 1045,
+     "slot": 6,
+     "itemId": 1257792166,
+     "count": 21
+    },
+    {
+     "page": 1045,
+     "slot": 7,
+     "itemId": 1558115984,
+     "count": 1000
+    },
+    {
+     "page": 1046,
+     "slot": 0,
+     "itemId": 1558115984,
+     "count": 833
+    },
+    {
+     "page": 1046,
+     "slot": 1,
+     "itemId": 2179075323,
+     "count": 19
+    },
+    {
+     "page": 1046,
+     "slot": 2,
+     "itemId": 2385754716,
+     "count": 71
+    },
+    {
+     "page": 1046,
+     "slot": 3,
+     "itemId": 2517406505,
+     "count": 291
+    },
+    {
+     "page": 1046,
+     "slot": 4,
+     "itemId": 2541805223,
+     "count": 647
+    },
+    {
+     "page": 1046,
+     "slot": 5,
+     "itemId": 2732808327,
+     "count": 64
+    },
+    {
+     "page": 1046,
+     "slot": 6,
+     "itemId": 2992740264,
+     "count": 7
+    },
+    {
+     "page": 1046,
+     "slot": 7,
+     "itemId": 3152907053,
+     "count": 52
+    },
+    {
+     "page": 1047,
+     "slot": 0,
+     "itemId": 3604850591,
+     "count": 163
+    },
+    {
+     "page": 1047,
+     "slot": 1,
+     "itemId": 3937186197,
+     "count": 505
+    },
+    {
+     "page": 1047,
+     "slot": 2,
+     "itemId": 4229884102,
+     "count": 10
+    },
+    {
+     "page": 1047,
+     "slot": 3,
+     "itemId": 3445636557,
+     "count": 162
+    }
+   ]
+  },
+  {
+   "entity": 1350,
+   "label": "Shroud Stuff",
+   "named": true,
+   "position": [
+    3223,
+    836.5,
+    2062.49
+   ],
+   "slotsTotal": 32,
+   "stacks": [
+    {
+     "page": 1350,
+     "slot": 0,
+     "itemId": 860644516,
+     "count": 250
+    },
+    {
+     "page": 1350,
+     "slot": 1,
+     "itemId": 860644516,
+     "count": 250
+    },
+    {
+     "page": 1350,
+     "slot": 2,
+     "itemId": 860644516,
+     "count": 250
+    },
+    {
+     "page": 1350,
+     "slot": 3,
+     "itemId": 860644516,
+     "count": 46
+    },
+    {
+     "page": 1350,
+     "slot": 4,
+     "itemId": 1320899587,
+     "count": 224
+    },
+    {
+     "page": 1350,
+     "slot": 5,
+     "itemId": 1728169696,
+     "count": 72
+    },
+    {
+     "page": 1350,
+     "slot": 6,
+     "itemId": 2179075323,
+     "count": 42
+    },
+    {
+     "page": 1350,
+     "slot": 7,
+     "itemId": 2559861108,
+     "count": 250
+    },
+    {
+     "page": 1351,
+     "slot": 0,
+     "itemId": 2559861108,
+     "count": 250
+    },
+    {
+     "page": 1351,
+     "slot": 1,
+     "itemId": 2559861108,
+     "count": 33
+    },
+    {
+     "page": 1351,
+     "slot": 2,
+     "itemId": 3509012331,
+     "count": 103
+    },
+    {
+     "page": 1351,
+     "slot": 3,
+     "itemId": 4229884102,
+     "count": 224
+    },
+    {
+     "page": 1351,
+     "slot": 4,
+     "itemId": 1284326318,
+     "count": 250
+    },
+    {
+     "page": 1351,
+     "slot": 5,
+     "itemId": 1284326318,
+     "count": 87
+    },
+    {
+     "page": 1351,
+     "slot": 6,
+     "itemId": 2832562682,
+     "count": 60
+    },
+    {
+     "page": 1351,
+     "slot": 7,
+     "itemId": 3405461465,
+     "count": 172
+    },
+    {
+     "page": 1352,
+     "slot": 0,
+     "itemId": 3622683972,
+     "count": 36
+    },
+    {
+     "page": 1352,
+     "slot": 1,
+     "itemId": 4090772336,
+     "count": 17
+    },
+    {
+     "page": 1352,
+     "slot": 2,
+     "itemId": 1528590138,
+     "count": 9
+    }
+   ]
+  },
+  {
+   "entity": 1210,
+   "label": "Wood",
+   "named": true,
+   "position": [
+    3219,
+    835.5,
+    2062.47
+   ],
+   "slotsTotal": 32,
+   "stacks": [
+    {
+     "page": 1210,
+     "slot": 0,
+     "itemId": 722268629,
+     "count": 229
+    },
+    {
+     "page": 1210,
+     "slot": 1,
+     "itemId": 722268629,
+     "count": 250
+    },
+    {
+     "page": 1210,
+     "slot": 2,
+     "itemId": 722268629,
+     "count": 250
+    },
+    {
+     "page": 1210,
+     "slot": 3,
+     "itemId": 1626290897,
+     "count": 178
+    },
+    {
+     "page": 1210,
+     "slot": 4,
+     "itemId": 1626290897,
+     "count": 250
+    },
+    {
+     "page": 1210,
+     "slot": 5,
+     "itemId": 1626290897,
+     "count": 250
+    },
+    {
+     "page": 1210,
+     "slot": 6,
+     "itemId": 1626290897,
+     "count": 250
+    },
+    {
+     "page": 1210,
+     "slot": 7,
+     "itemId": 1626290897,
+     "count": 250
+    },
+    {
+     "page": 1211,
+     "slot": 0,
+     "itemId": 1626290897,
+     "count": 178
+    },
+    {
+     "page": 1211,
+     "slot": 1,
+     "itemId": 1635234852,
+     "count": 11
+    },
+    {
+     "page": 1211,
+     "slot": 2,
+     "itemId": 1765656585,
+     "count": 47
+    },
+    {
+     "page": 1211,
+     "slot": 3,
+     "itemId": 3921293392,
+     "count": 41
+    },
+    {
+     "page": 1211,
+     "slot": 4,
+     "itemId": 722268629,
+     "count": 250
+    },
+    {
+     "page": 1211,
+     "slot": 5,
+     "itemId": 722268629,
+     "count": 250
+    }
+   ]
+  },
+  {
+   "entity": 1334,
+   "label": "Meat Food",
+   "named": true,
+   "position": [
+    3219,
+    836.5,
+    2062.47
+   ],
+   "slotsTotal": 32,
+   "stacks": [
+    {
+     "page": 1334,
+     "slot": 0,
+     "itemId": 1492892444,
+     "count": 20
+    },
+    {
+     "page": 1334,
+     "slot": 1,
+     "itemId": 1492892444,
+     "count": 20
+    },
+    {
+     "page": 1334,
+     "slot": 2,
+     "itemId": 1492892444,
+     "count": 20
+    },
+    {
+     "page": 1334,
+     "slot": 3,
+     "itemId": 1492892444,
+     "count": 20
+    },
+    {
+     "page": 1334,
+     "slot": 4,
+     "itemId": 1492892444,
+     "count": 20
+    },
+    {
+     "page": 1334,
+     "slot": 5,
+     "itemId": 1492892444,
+     "count": 20
+    },
+    {
+     "page": 1334,
+     "slot": 6,
+     "itemId": 1492892444,
+     "count": 20
+    },
+    {
+     "page": 1334,
+     "slot": 7,
+     "itemId": 1492892444,
+     "count": 17
+    },
+    {
+     "page": 1335,
+     "slot": 0,
+     "itemId": 2512460235,
+     "count": 20
+    },
+    {
+     "page": 1335,
+     "slot": 1,
+     "itemId": 2512460235,
+     "count": 20
+    },
+    {
+     "page": 1335,
+     "slot": 2,
+     "itemId": 2512460235,
+     "count": 20
+    },
+    {
+     "page": 1335,
+     "slot": 3,
+     "itemId": 2512460235,
+     "count": 20
+    },
+    {
+     "page": 1335,
+     "slot": 4,
+     "itemId": 2512460235,
+     "count": 20
+    },
+    {
+     "page": 1335,
+     "slot": 5,
+     "itemId": 2512460235,
+     "count": 20
+    },
+    {
+     "page": 1335,
+     "slot": 6,
+     "itemId": 2512460235,
+     "count": 20
+    },
+    {
+     "page": 1335,
+     "slot": 7,
+     "itemId": 2512460235,
+     "count": 20
+    },
+    {
+     "page": 1336,
+     "slot": 0,
+     "itemId": 2512460235,
+     "count": 20
+    },
+    {
+     "page": 1336,
+     "slot": 1,
+     "itemId": 2512460235,
+     "count": 19
+    },
+    {
+     "page": 1336,
+     "slot": 2,
+     "itemId": 2968802610,
+     "count": 20
+    },
+    {
+     "page": 1336,
+     "slot": 3,
+     "itemId": 2968802610,
+     "count": 20
+    },
+    {
+     "page": 1336,
+     "slot": 4,
+     "itemId": 2968802610,
+     "count": 20
+    },
+    {
+     "page": 1336,
+     "slot": 5,
+     "itemId": 2968802610,
+     "count": 20
+    },
+    {
+     "page": 1336,
+     "slot": 6,
+     "itemId": 2968802610,
+     "count": 20
+    },
+    {
+     "page": 1336,
+     "slot": 7,
+     "itemId": 2968802610,
+     "count": 20
+    },
+    {
+     "page": 1337,
+     "slot": 0,
+     "itemId": 2968802610,
+     "count": 20
+    },
+    {
+     "page": 1337,
+     "slot": 1,
+     "itemId": 2968802610,
+     "count": 20
+    },
+    {
+     "page": 1337,
+     "slot": 2,
+     "itemId": 2968802610,
+     "count": 20
+    },
+    {
+     "page": 1337,
+     "slot": 3,
+     "itemId": 2968802610,
+     "count": 20
+    },
+    {
+     "page": 1337,
+     "slot": 4,
+     "itemId": 2968802610,
+     "count": 9
+    },
+    {
+     "page": 1337,
+     "slot": 5,
+     "itemId": 385885887,
+     "count": 8
+    }
+   ]
+  },
+  {
+   "entity": 1040,
+   "label": "Stone and Metal",
+   "named": true,
+   "position": [
+    3219,
+    834.5,
+    2062.47
+   ],
+   "slotsTotal": 32,
+   "stacks": [
+    {
+     "page": 1040,
+     "slot": 0,
+     "itemId": 132545371,
+     "count": 250
+    },
+    {
+     "page": 1040,
+     "slot": 1,
+     "itemId": 132545371,
+     "count": 250
+    },
+    {
+     "page": 1040,
+     "slot": 2,
+     "itemId": 132545371,
+     "count": 250
+    },
+    {
+     "page": 1040,
+     "slot": 3,
+     "itemId": 132545371,
+     "count": 155
+    },
+    {
+     "page": 1040,
+     "slot": 4,
+     "itemId": 170689373,
+     "count": 120
+    },
+    {
+     "page": 1040,
+     "slot": 5,
+     "itemId": 372029138,
+     "count": 207
+    },
+    {
+     "page": 1040,
+     "slot": 6,
+     "itemId": 631520303,
+     "count": 1000
+    },
+    {
+     "page": 1040,
+     "slot": 7,
+     "itemId": 631520303,
+     "count": 1000
+    },
+    {
+     "page": 1041,
+     "slot": 0,
+     "itemId": 631520303,
+     "count": 1000
+    },
+    {
+     "page": 1041,
+     "slot": 1,
+     "itemId": 631520303,
+     "count": 816
+    },
+    {
+     "page": 1041,
+     "slot": 2,
+     "itemId": 731732847,
+     "count": 250
+    },
+    {
+     "page": 1041,
+     "slot": 3,
+     "itemId": 731732847,
+     "count": 250
+    },
+    {
+     "page": 1041,
+     "slot": 4,
+     "itemId": 731732847,
+     "count": 70
+    },
+    {
+     "page": 1041,
+     "slot": 5,
+     "itemId": 1261933427,
+     "count": 193
+    },
+    {
+     "page": 1041,
+     "slot": 6,
+     "itemId": 1586398842,
+     "count": 587
+    },
+    {
+     "page": 1041,
+     "slot": 7,
+     "itemId": 1714627847,
+     "count": 27
+    },
+    {
+     "page": 1042,
+     "slot": 0,
+     "itemId": 1925006089,
+     "count": 250
+    },
+    {
+     "page": 1042,
+     "slot": 1,
+     "itemId": 1925006089,
+     "count": 250
+    },
+    {
+     "page": 1042,
+     "slot": 2,
+     "itemId": 1925006089,
+     "count": 250
+    },
+    {
+     "page": 1042,
+     "slot": 3,
+     "itemId": 1925006089,
+     "count": 250
+    },
+    {
+     "page": 1042,
+     "slot": 4,
+     "itemId": 1925006089,
+     "count": 109
+    },
+    {
+     "page": 1042,
+     "slot": 5,
+     "itemId": 2530601241,
+     "count": 500
+    },
+    {
+     "page": 1042,
+     "slot": 6,
+     "itemId": 2530601241,
+     "count": 25
+    },
+    {
+     "page": 1042,
+     "slot": 7,
+     "itemId": 2743545700,
+     "count": 99
+    },
+    {
+     "page": 1043,
+     "slot": 0,
+     "itemId": 4230023681,
+     "count": 82
+    },
+    {
+     "page": 1043,
+     "slot": 1,
+     "itemId": 4271896226,
+     "count": 148
+    },
+    {
+     "page": 1043,
+     "slot": 2,
+     "itemId": 642002617,
+     "count": 4
+    },
+    {
+     "page": 1043,
+     "slot": 3,
+     "itemId": 1072522988,
+     "count": 2
+    }
+   ]
+  },
+  {
+   "entity": 1354,
+   "label": "Critter & Heads",
+   "named": true,
+   "position": [
+    3224,
+    836.5,
+    2062.49
+   ],
+   "slotsTotal": 32,
+   "stacks": [
+    {
+     "page": 1354,
+     "slot": 0,
+     "itemId": 3264892278,
+     "count": 250
+    },
+    {
+     "page": 1354,
+     "slot": 1,
+     "itemId": 3264892278,
+     "count": 250
+    },
+    {
+     "page": 1354,
+     "slot": 2,
+     "itemId": 3264892278,
+     "count": 85
+    },
+    {
+     "page": 1354,
+     "slot": 3,
+     "itemId": 3571891401,
+     "count": 16
+    },
+    {
+     "page": 1354,
+     "slot": 4,
+     "itemId": 2710616938,
+     "count": 7
+    },
+    {
+     "page": 1354,
+     "slot": 5,
+     "itemId": 800792662,
+     "count": 1
+    },
+    {
+     "page": 1354,
+     "slot": 6,
+     "itemId": 1285378490,
+     "count": 7
+    },
+    {
+     "page": 1354,
+     "slot": 7,
+     "itemId": 1353828797,
+     "count": 3
+    },
+    {
+     "page": 1355,
+     "slot": 0,
+     "itemId": 1368893472,
+     "count": 2
+    },
+    {
+     "page": 1355,
+     "slot": 1,
+     "itemId": 2339068671,
+     "count": 2
+    },
+    {
+     "page": 1355,
+     "slot": 2,
+     "itemId": 3574383404,
+     "count": 4
+    },
+    {
+     "page": 1355,
+     "slot": 3,
+     "itemId": 2743545700,
+     "count": 4
+    },
+    {
+     "page": 1355,
+     "slot": 4,
+     "itemId": 1693311429,
+     "count": 2
+    }
+   ]
+  },
+  {
+   "entity": 1358,
+   "label": "Books & Gold Coins",
+   "named": true,
+   "position": [
+    3225,
+    836.5,
+    2062.49
+   ],
+   "slotsTotal": 32,
+   "stacks": [
+    {
+     "page": 1358,
+     "slot": 0,
+     "itemId": 2610555646,
+     "count": 250
+    },
+    {
+     "page": 1358,
+     "slot": 1,
+     "itemId": 2610555646,
+     "count": 250
+    },
+    {
+     "page": 1358,
+     "slot": 2,
+     "itemId": 2610555646,
+     "count": 250
+    },
+    {
+     "page": 1358,
+     "slot": 3,
+     "itemId": 2610555646,
+     "count": 250
+    },
+    {
+     "page": 1358,
+     "slot": 4,
+     "itemId": 2610555646,
+     "count": 250
+    },
+    {
+     "page": 1358,
+     "slot": 5,
+     "itemId": 2610555646,
+     "count": 250
+    },
+    {
+     "page": 1358,
+     "slot": 6,
+     "itemId": 2610555646,
+     "count": 250
+    },
+    {
+     "page": 1358,
+     "slot": 7,
+     "itemId": 2610555646,
+     "count": 14
+    },
+    {
+     "page": 1359,
+     "slot": 0,
+     "itemId": 2572858337,
+     "count": 1000
+    },
+    {
+     "page": 1359,
+     "slot": 1,
+     "itemId": 2572858337,
+     "count": 1000
+    },
+    {
+     "page": 1359,
+     "slot": 2,
+     "itemId": 2572858337,
+     "count": 37
+    }
+   ]
+  },
+  {
+   "entity": 1253,
+   "label": "Twigs",
+   "named": true,
+   "position": [
+    3226,
+    835.5,
+    2062.49
+   ],
+   "slotsTotal": 32,
+   "stacks": [
+    {
+     "page": 1253,
+     "slot": 0,
+     "itemId": 1798662696,
+     "count": 250
+    },
+    {
+     "page": 1253,
+     "slot": 1,
+     "itemId": 1798662696,
+     "count": 250
+    },
+    {
+     "page": 1253,
+     "slot": 2,
+     "itemId": 1798662696,
+     "count": 250
+    },
+    {
+     "page": 1253,
+     "slot": 3,
+     "itemId": 1798662696,
+     "count": 250
+    },
+    {
+     "page": 1253,
+     "slot": 4,
+     "itemId": 1798662696,
+     "count": 250
+    },
+    {
+     "page": 1253,
+     "slot": 5,
+     "itemId": 1798662696,
+     "count": 250
+    },
+    {
+     "page": 1253,
+     "slot": 6,
+     "itemId": 1798662696,
+     "count": 250
+    },
+    {
+     "page": 1253,
+     "slot": 7,
+     "itemId": 1798662696,
+     "count": 250
+    },
+    {
+     "page": 1254,
+     "slot": 0,
+     "itemId": 1798662696,
+     "count": 250
+    },
+    {
+     "page": 1254,
+     "slot": 1,
+     "itemId": 1798662696,
+     "count": 250
+    },
+    {
+     "page": 1254,
+     "slot": 2,
+     "itemId": 1798662696,
+     "count": 250
+    },
+    {
+     "page": 1254,
+     "slot": 3,
+     "itemId": 1798662696,
+     "count": 250
+    },
+    {
+     "page": 1254,
+     "slot": 4,
+     "itemId": 1798662696,
+     "count": 250
+    },
+    {
+     "page": 1254,
+     "slot": 5,
+     "itemId": 1798662696,
+     "count": 250
+    },
+    {
+     "page": 1254,
+     "slot": 6,
+     "itemId": 1798662696,
+     "count": 250
+    },
+    {
+     "page": 1254,
+     "slot": 7,
+     "itemId": 1798662696,
+     "count": 250
+    },
+    {
+     "page": 1255,
+     "slot": 0,
+     "itemId": 1798662696,
+     "count": 250
+    },
+    {
+     "page": 1255,
+     "slot": 1,
+     "itemId": 1798662696,
+     "count": 250
+    },
+    {
+     "page": 1255,
+     "slot": 2,
+     "itemId": 1798662696,
+     "count": 250
+    },
+    {
+     "page": 1255,
+     "slot": 3,
+     "itemId": 1798662696,
+     "count": 250
+    },
+    {
+     "page": 1255,
+     "slot": 4,
+     "itemId": 1798662696,
+     "count": 250
+    },
+    {
+     "page": 1255,
+     "slot": 5,
+     "itemId": 1798662696,
+     "count": 250
+    },
+    {
+     "page": 1255,
+     "slot": 6,
+     "itemId": 1798662696,
+     "count": 250
+    },
+    {
+     "page": 1255,
+     "slot": 7,
+     "itemId": 1798662696,
+     "count": 247
+    }
+   ]
+  },
+  {
+   "entity": 1093,
+   "label": "Gems",
+   "named": true,
+   "position": [
+    3226,
+    834.5,
+    2062.49
+   ],
+   "slotsTotal": 32,
+   "stacks": [
+    {
+     "page": 1093,
+     "slot": 0,
+     "itemId": 1323406480,
+     "count": 500
+    },
+    {
+     "page": 1093,
+     "slot": 1,
+     "itemId": 1323406480,
+     "count": 379
+    },
+    {
+     "page": 1093,
+     "slot": 2,
+     "itemId": 1782638906,
+     "count": 500
+    },
+    {
+     "page": 1093,
+     "slot": 3,
+     "itemId": 1782638906,
+     "count": 500
+    },
+    {
+     "page": 1093,
+     "slot": 4,
+     "itemId": 1782638906,
+     "count": 500
+    },
+    {
+     "page": 1093,
+     "slot": 5,
+     "itemId": 1782638906,
+     "count": 500
+    },
+    {
+     "page": 1093,
+     "slot": 6,
+     "itemId": 1782638906,
+     "count": 328
+    },
+    {
+     "page": 1093,
+     "slot": 7,
+     "itemId": 1378756449,
+     "count": 1
+    },
+    {
+     "page": 1096,
+     "slot": 0,
+     "itemId": 1378756449,
+     "count": 1
+    }
+   ]
+  },
+  {
+   "entity": 1362,
+   "label": "Plant Fiber",
+   "named": true,
+   "position": [
+    3226,
+    836.5,
+    2062.5
+   ],
+   "slotsTotal": 32,
+   "stacks": [
+    {
+     "page": 1362,
+     "slot": 0,
+     "itemId": 3316218728,
+     "count": 250
+    },
+    {
+     "page": 1362,
+     "slot": 1,
+     "itemId": 3316218728,
+     "count": 250
+    },
+    {
+     "page": 1362,
+     "slot": 2,
+     "itemId": 3316218728,
+     "count": 250
+    },
+    {
+     "page": 1362,
+     "slot": 3,
+     "itemId": 3316218728,
+     "count": 250
+    },
+    {
+     "page": 1362,
+     "slot": 4,
+     "itemId": 3316218728,
+     "count": 250
+    },
+    {
+     "page": 1362,
+     "slot": 5,
+     "itemId": 3316218728,
+     "count": 250
+    },
+    {
+     "page": 1362,
+     "slot": 6,
+     "itemId": 3316218728,
+     "count": 250
+    },
+    {
+     "page": 1362,
+     "slot": 7,
+     "itemId": 3316218728,
+     "count": 250
+    },
+    {
+     "page": 1363,
+     "slot": 0,
+     "itemId": 3316218728,
+     "count": 250
+    },
+    {
+     "page": 1363,
+     "slot": 1,
+     "itemId": 3316218728,
+     "count": 250
+    },
+    {
+     "page": 1363,
+     "slot": 2,
+     "itemId": 3316218728,
+     "count": 250
+    },
+    {
+     "page": 1363,
+     "slot": 3,
+     "itemId": 3316218728,
+     "count": 250
+    },
+    {
+     "page": 1363,
+     "slot": 4,
+     "itemId": 3316218728,
+     "count": 250
+    },
+    {
+     "page": 1363,
+     "slot": 5,
+     "itemId": 3316218728,
+     "count": 250
+    },
+    {
+     "page": 1363,
+     "slot": 6,
+     "itemId": 3316218728,
+     "count": 250
+    },
+    {
+     "page": 1363,
+     "slot": 7,
+     "itemId": 3316218728,
+     "count": 250
+    },
+    {
+     "page": 1364,
+     "slot": 0,
+     "itemId": 3316218728,
+     "count": 103
+    }
+   ]
+  },
+  {
+   "entity": 1257,
+   "label": "I-J Seeds",
+   "named": true,
+   "position": [
+    3233,
+    835.5,
+    2064.99
+   ],
+   "slotsTotal": 32,
+   "stacks": [
+    {
+     "page": 1257,
+     "slot": 0,
+     "itemId": 1533027547,
+     "count": 100
+    },
+    {
+     "page": 1257,
+     "slot": 1,
+     "itemId": 1533027547,
+     "count": 100
+    },
+    {
+     "page": 1257,
+     "slot": 2,
+     "itemId": 1533027547,
+     "count": 100
+    },
+    {
+     "page": 1257,
+     "slot": 3,
+     "itemId": 1533027547,
+     "count": 100
+    },
+    {
+     "page": 1257,
+     "slot": 4,
+     "itemId": 1533027547,
+     "count": 100
+    },
+    {
+     "page": 1257,
+     "slot": 5,
+     "itemId": 1533027547,
+     "count": 100
+    },
+    {
+     "page": 1257,
+     "slot": 6,
+     "itemId": 1533027547,
+     "count": 100
+    },
+    {
+     "page": 1257,
+     "slot": 7,
+     "itemId": 1533027547,
+     "count": 100
+    },
+    {
+     "page": 1258,
+     "slot": 0,
+     "itemId": 1533027547,
+     "count": 100
+    },
+    {
+     "page": 1258,
+     "slot": 1,
+     "itemId": 1533027547,
+     "count": 5
+    },
+    {
+     "page": 1258,
+     "slot": 2,
+     "itemId": 4276529065,
+     "count": 250
+    },
+    {
+     "page": 1258,
+     "slot": 3,
+     "itemId": 4276529065,
+     "count": 208
+    }
+   ]
+  },
+  {
+   "entity": 1104,
+   "label": "Q-R Seeds",
+   "named": true,
+   "position": [
+    3233,
+    834.5,
+    2064.99
+   ],
+   "slotsTotal": 32,
+   "stacks": [
+    {
+     "page": 1104,
+     "slot": 0,
+     "itemId": 1026141130,
+     "count": 117
+    },
+    {
+     "page": 1104,
+     "slot": 1,
+     "itemId": 2229826461,
+     "count": 100
+    },
+    {
+     "page": 1104,
+     "slot": 2,
+     "itemId": 2229826461,
+     "count": 25
+    },
+    {
+     "page": 1104,
+     "slot": 3,
+     "itemId": 1628543982,
+     "count": 55
+    }
+   ]
+  },
+  {
+   "entity": 1366,
+   "label": "A-B Seeds",
+   "named": true,
+   "position": [
+    3233,
+    836.5,
+    2064.99
+   ],
+   "slotsTotal": 32,
+   "stacks": [
+    {
+     "page": 1366,
+     "slot": 0,
+     "itemId": 2721454042,
+     "count": 100
+    },
+    {
+     "page": 1366,
+     "slot": 1,
+     "itemId": 2721454042,
+     "count": 100
+    },
+    {
+     "page": 1366,
+     "slot": 2,
+     "itemId": 2721454042,
+     "count": 10
+    },
+    {
+     "page": 1366,
+     "slot": 3,
+     "itemId": 1304815894,
+     "count": 20
+    },
+    {
+     "page": 1366,
+     "slot": 4,
+     "itemId": 1304815894,
+     "count": 20
+    },
+    {
+     "page": 1366,
+     "slot": 5,
+     "itemId": 1304815894,
+     "count": 20
+    },
+    {
+     "page": 1366,
+     "slot": 6,
+     "itemId": 1304815894,
+     "count": 20
+    },
+    {
+     "page": 1366,
+     "slot": 7,
+     "itemId": 1304815894,
+     "count": 20
+    },
+    {
+     "page": 1367,
+     "slot": 0,
+     "itemId": 1304815894,
+     "count": 20
+    },
+    {
+     "page": 1367,
+     "slot": 1,
+     "itemId": 1304815894,
+     "count": 20
+    },
+    {
+     "page": 1367,
+     "slot": 2,
+     "itemId": 1304815894,
+     "count": 20
+    },
+    {
+     "page": 1367,
+     "slot": 3,
+     "itemId": 1304815894,
+     "count": 19
+    },
+    {
+     "page": 1367,
+     "slot": 4,
+     "itemId": 3542827745,
+     "count": 20
+    },
+    {
+     "page": 1367,
+     "slot": 5,
+     "itemId": 3542827745,
+     "count": 20
+    },
+    {
+     "page": 1367,
+     "slot": 6,
+     "itemId": 3542827745,
+     "count": 20
+    },
+    {
+     "page": 1367,
+     "slot": 7,
+     "itemId": 3542827745,
+     "count": 20
+    },
+    {
+     "page": 1368,
+     "slot": 0,
+     "itemId": 3542827745,
+     "count": 20
+    },
+    {
+     "page": 1368,
+     "slot": 1,
+     "itemId": 3542827745,
+     "count": 15
+    },
+    {
+     "page": 1368,
+     "slot": 2,
+     "itemId": 4180130855,
+     "count": 7
+    },
+    {
+     "page": 1368,
+     "slot": 3,
+     "itemId": 4094316095,
+     "count": 7
+    },
+    {
+     "page": 1368,
+     "slot": 4,
+     "itemId": 764289975,
+     "count": 30
+    }
+   ]
+  },
+  {
+   "entity": 1108,
+   "label": "S-T Seeds",
+   "named": true,
+   "position": [
+    3234,
+    834.5,
+    2064.99
+   ],
+   "slotsTotal": 32,
+   "stacks": [
+    {
+     "page": 1108,
+     "slot": 0,
+     "itemId": 1438935166,
+     "count": 100
+    },
+    {
+     "page": 1108,
+     "slot": 1,
+     "itemId": 1438935166,
+     "count": 100
+    },
+    {
+     "page": 1108,
+     "slot": 2,
+     "itemId": 4181548098,
+     "count": 100
+    },
+    {
+     "page": 1108,
+     "slot": 3,
+     "itemId": 4181548098,
+     "count": 100
+    },
+    {
+     "page": 1108,
+     "slot": 4,
+     "itemId": 4181548098,
+     "count": 9
+    },
+    {
+     "page": 1108,
+     "slot": 5,
+     "itemId": 3479563223,
+     "count": 20
+    },
+    {
+     "page": 1108,
+     "slot": 6,
+     "itemId": 3479563223,
+     "count": 20
+    },
+    {
+     "page": 1108,
+     "slot": 7,
+     "itemId": 3479563223,
+     "count": 20
+    },
+    {
+     "page": 1109,
+     "slot": 0,
+     "itemId": 3479563223,
+     "count": 20
+    },
+    {
+     "page": 1109,
+     "slot": 1,
+     "itemId": 1036540037,
+     "count": 20
+    },
+    {
+     "page": 1109,
+     "slot": 2,
+     "itemId": 1036540037,
+     "count": 20
+    },
+    {
+     "page": 1109,
+     "slot": 3,
+     "itemId": 1036540037,
+     "count": 20
+    },
+    {
+     "page": 1109,
+     "slot": 4,
+     "itemId": 1036540037,
+     "count": 20
+    },
+    {
+     "page": 1109,
+     "slot": 5,
+     "itemId": 1036540037,
+     "count": 4
+    },
+    {
+     "page": 1109,
+     "slot": 6,
+     "itemId": 3479563223,
+     "count": 20
+    },
+    {
+     "page": 1109,
+     "slot": 7,
+     "itemId": 3479563223,
+     "count": 20
+    },
+    {
+     "page": 1110,
+     "slot": 0,
+     "itemId": 2456844314,
+     "count": 5
+    },
+    {
+     "page": 1110,
+     "slot": 6,
+     "itemId": 3479563223,
+     "count": 9
+    }
+   ]
+  },
+  {
+   "entity": 1370,
+   "label": "C-D Seeds",
+   "named": true,
+   "position": [
+    3234,
+    836.5,
+    2064.99
+   ],
+   "slotsTotal": 32,
+   "stacks": [
+    {
+     "page": 1370,
+     "slot": 0,
+     "itemId": 3660770821,
+     "count": 100
+    },
+    {
+     "page": 1370,
+     "slot": 1,
+     "itemId": 3660770821,
+     "count": 100
+    },
+    {
+     "page": 1370,
+     "slot": 2,
+     "itemId": 3660770821,
+     "count": 51
+    },
+    {
+     "page": 1370,
+     "slot": 3,
+     "itemId": 3118804138,
+     "count": 20
+    },
+    {
+     "page": 1370,
+     "slot": 4,
+     "itemId": 3118804138,
+     "count": 20
+    },
+    {
+     "page": 1370,
+     "slot": 5,
+     "itemId": 3118804138,
+     "count": 20
+    },
+    {
+     "page": 1370,
+     "slot": 6,
+     "itemId": 3118804138,
+     "count": 20
+    },
+    {
+     "page": 1370,
+     "slot": 7,
+     "itemId": 3118804138,
+     "count": 20
+    },
+    {
+     "page": 1371,
+     "slot": 0,
+     "itemId": 3118804138,
+     "count": 20
+    },
+    {
+     "page": 1371,
+     "slot": 1,
+     "itemId": 3118804138,
+     "count": 20
+    },
+    {
+     "page": 1371,
+     "slot": 2,
+     "itemId": 3118804138,
+     "count": 20
+    },
+    {
+     "page": 1371,
+     "slot": 3,
+     "itemId": 3118804138,
+     "count": 20
+    },
+    {
+     "page": 1371,
+     "slot": 4,
+     "itemId": 3118804138,
+     "count": 20
+    },
+    {
+     "page": 1371,
+     "slot": 5,
+     "itemId": 3118804138,
+     "count": 20
+    },
+    {
+     "page": 1371,
+     "slot": 6,
+     "itemId": 3118804138,
+     "count": 20
+    },
+    {
+     "page": 1371,
+     "slot": 7,
+     "itemId": 3118804138,
+     "count": 20
+    },
+    {
+     "page": 1372,
+     "slot": 0,
+     "itemId": 3118804138,
+     "count": 20
+    },
+    {
+     "page": 1372,
+     "slot": 1,
+     "itemId": 3118804138,
+     "count": 9
+    },
+    {
+     "page": 1372,
+     "slot": 3,
+     "itemId": 842838716,
+     "count": 100
+    },
+    {
+     "page": 1372,
+     "slot": 4,
+     "itemId": 842838716,
+     "count": 5
+    }
+   ]
+  },
+  {
+   "entity": 1112,
+   "label": "WXYZ Seeds",
+   "named": true,
+   "position": [
+    3235,
+    834.5,
+    2064.99
+   ],
+   "slotsTotal": 32,
+   "stacks": [
+    {
+     "page": 1112,
+     "slot": 0,
+     "itemId": 2435149273,
+     "count": 6
+    }
+   ]
+  },
+  {
+   "entity": 1262,
+   "label": "M-N Seeds",
+   "named": true,
+   "position": [
+    3235,
+    835.5,
+    2064.99
+   ],
+   "slotsTotal": 32,
+   "stacks": [
+    {
+     "page": 1262,
+     "slot": 0,
+     "itemId": 2290894589,
+     "count": 18
+    }
+   ]
+  },
+  {
+   "entity": 1374,
+   "label": "E-F Seeds",
+   "named": true,
+   "position": [
+    3235,
+    836.5,
+    2064.99
+   ],
+   "slotsTotal": 32,
+   "stacks": [
+    {
+     "page": 1374,
+     "slot": 0,
+     "itemId": 34487402,
+     "count": 100
+    },
+    {
+     "page": 1374,
+     "slot": 1,
+     "itemId": 34487402,
+     "count": 100
+    },
+    {
+     "page": 1374,
+     "slot": 2,
+     "itemId": 34487402,
+     "count": 100
+    },
+    {
+     "page": 1374,
+     "slot": 3,
+     "itemId": 34487402,
+     "count": 100
+    },
+    {
+     "page": 1374,
+     "slot": 4,
+     "itemId": 34487402,
+     "count": 100
+    },
+    {
+     "page": 1374,
+     "slot": 5,
+     "itemId": 34487402,
+     "count": 100
+    },
+    {
+     "page": 1374,
+     "slot": 6,
+     "itemId": 34487402,
+     "count": 100
+    },
+    {
+     "page": 1374,
+     "slot": 7,
+     "itemId": 34487402,
+     "count": 100
+    },
+    {
+     "page": 1375,
+     "slot": 0,
+     "itemId": 34487402,
+     "count": 100
+    },
+    {
+     "page": 1375,
+     "slot": 1,
+     "itemId": 34487402,
+     "count": 66
+    },
+    {
+     "page": 1375,
+     "slot": 2,
+     "itemId": 3898847112,
+     "count": 250
+    },
+    {
+     "page": 1375,
+     "slot": 3,
+     "itemId": 3898847112,
+     "count": 250
+    },
+    {
+     "page": 1375,
+     "slot": 4,
+     "itemId": 3898847112,
+     "count": 250
+    },
+    {
+     "page": 1375,
+     "slot": 5,
+     "itemId": 3898847112,
+     "count": 250
+    },
+    {
+     "page": 1375,
+     "slot": 6,
+     "itemId": 3898847112,
+     "count": 250
+    },
+    {
+     "page": 1375,
+     "slot": 7,
+     "itemId": 3898847112,
+     "count": 250
+    },
+    {
+     "page": 1376,
+     "slot": 0,
+     "itemId": 3898847112,
+     "count": 250
+    },
+    {
+     "page": 1376,
+     "slot": 1,
+     "itemId": 3898847112,
+     "count": 250
+    },
+    {
+     "page": 1376,
+     "slot": 2,
+     "itemId": 3898847112,
+     "count": 250
+    },
+    {
+     "page": 1376,
+     "slot": 3,
+     "itemId": 3898847112,
+     "count": 164
+    }
+   ]
+  },
+  {
+   "entity": 1266,
+   "label": "O-P Seeds",
+   "named": true,
+   "position": [
+    3236,
+    835.5,
+    2064.99
+   ],
+   "slotsTotal": 32,
+   "stacks": [
+    {
+     "page": 1266,
+     "slot": 0,
+     "itemId": 751481953,
+     "count": 100
+    },
+    {
+     "page": 1266,
+     "slot": 1,
+     "itemId": 751481953,
+     "count": 100
+    },
+    {
+     "page": 1266,
+     "slot": 2,
+     "itemId": 751481953,
+     "count": 5
+    },
+    {
+     "page": 1266,
+     "slot": 3,
+     "itemId": 1174705547,
+     "count": 100
+    },
+    {
+     "page": 1266,
+     "slot": 4,
+     "itemId": 1174705547,
+     "count": 100
+    },
+    {
+     "page": 1266,
+     "slot": 5,
+     "itemId": 1174705547,
+     "count": 100
+    },
+    {
+     "page": 1266,
+     "slot": 6,
+     "itemId": 1174705547,
+     "count": 100
+    },
+    {
+     "page": 1266,
+     "slot": 7,
+     "itemId": 1174705547,
+     "count": 5
+    },
+    {
+     "page": 1267,
+     "slot": 0,
+     "itemId": 600862405,
+     "count": 20
+    },
+    {
+     "page": 1267,
+     "slot": 1,
+     "itemId": 600862405,
+     "count": 20
+    },
+    {
+     "page": 1267,
+     "slot": 2,
+     "itemId": 600862405,
+     "count": 20
+    },
+    {
+     "page": 1267,
+     "slot": 3,
+     "itemId": 600862405,
+     "count": 20
+    },
+    {
+     "page": 1267,
+     "slot": 6,
+     "itemId": 3707271437,
+     "count": 20
+    },
+    {
+     "page": 1267,
+     "slot": 7,
+     "itemId": 3707271437,
+     "count": 20
+    },
+    {
+     "page": 1268,
+     "slot": 0,
+     "itemId": 3707271437,
+     "count": 20
+    },
+    {
+     "page": 1268,
+     "slot": 1,
+     "itemId": 3707271437,
+     "count": 20
+    },
+    {
+     "page": 1268,
+     "slot": 2,
+     "itemId": 3707271437,
+     "count": 20
+    },
+    {
+     "page": 1268,
+     "slot": 3,
+     "itemId": 3707271437,
+     "count": 20
+    },
+    {
+     "page": 1268,
+     "slot": 4,
+     "itemId": 3707271437,
+     "count": 11
+    }
+   ]
+  },
+  {
+   "entity": 1116,
+   "label": "Soil",
+   "named": true,
+   "position": [
+    3236,
+    834.5,
+    2064.99
+   ],
+   "slotsTotal": 32,
+   "stacks": [
+    {
+     "page": 1116,
+     "slot": 0,
+     "itemId": 1823674426,
+     "count": 250
+    },
+    {
+     "page": 1116,
+     "slot": 1,
+     "itemId": 1823674426,
+     "count": 250
+    },
+    {
+     "page": 1116,
+     "slot": 2,
+     "itemId": 1823674426,
+     "count": 250
+    },
+    {
+     "page": 1116,
+     "slot": 3,
+     "itemId": 1823674426,
+     "count": 162
+    }
+   ]
+  },
+  {
+   "entity": 1378,
+   "label": "G-H Seeds",
+   "named": true,
+   "position": [
+    3236,
+    836.5,
+    2064.99
+   ],
+   "slotsTotal": 32,
+   "stacks": [
+    {
+     "page": 1378,
+     "slot": 0,
+     "itemId": 3360608010,
+     "count": 20
+    },
+    {
+     "page": 1378,
+     "slot": 1,
+     "itemId": 3360608010,
+     "count": 20
+    },
+    {
+     "page": 1378,
+     "slot": 2,
+     "itemId": 3360608010,
+     "count": 20
+    },
+    {
+     "page": 1378,
+     "slot": 3,
+     "itemId": 3360608010,
+     "count": 20
+    },
+    {
+     "page": 1378,
+     "slot": 4,
+     "itemId": 3360608010,
+     "count": 20
+    },
+    {
+     "page": 1378,
+     "slot": 5,
+     "itemId": 3360608010,
+     "count": 20
+    },
+    {
+     "page": 1378,
+     "slot": 6,
+     "itemId": 3360608010,
+     "count": 20
+    },
+    {
+     "page": 1378,
+     "slot": 7,
+     "itemId": 3360608010,
+     "count": 20
+    },
+    {
+     "page": 1379,
+     "slot": 0,
+     "itemId": 3360608010,
+     "count": 20
+    },
+    {
+     "page": 1379,
+     "slot": 1,
+     "itemId": 3360608010,
+     "count": 20
+    },
+    {
+     "page": 1379,
+     "slot": 2,
+     "itemId": 3360608010,
+     "count": 20
+    },
+    {
+     "page": 1379,
+     "slot": 3,
+     "itemId": 3360608010,
+     "count": 20
+    },
+    {
+     "page": 1379,
+     "slot": 4,
+     "itemId": 3360608010,
+     "count": 20
+    },
+    {
+     "page": 1379,
+     "slot": 5,
+     "itemId": 3360608010,
+     "count": 20
+    },
+    {
+     "page": 1379,
+     "slot": 6,
+     "itemId": 3360608010,
+     "count": 20
+    },
+    {
+     "page": 1379,
+     "slot": 7,
+     "itemId": 3360608010,
+     "count": 20
+    },
+    {
+     "page": 1380,
+     "slot": 0,
+     "itemId": 3360608010,
+     "count": 20
+    },
+    {
+     "page": 1380,
+     "slot": 1,
+     "itemId": 3360608010,
+     "count": 20
+    },
+    {
+     "page": 1380,
+     "slot": 2,
+     "itemId": 3360608010,
+     "count": 20
+    },
+    {
+     "page": 1380,
+     "slot": 3,
+     "itemId": 3360608010,
+     "count": 20
+    },
+    {
+     "page": 1380,
+     "slot": 4,
+     "itemId": 3360608010,
+     "count": 20
+    },
+    {
+     "page": 1380,
+     "slot": 5,
+     "itemId": 3360608010,
+     "count": 20
+    },
+    {
+     "page": 1380,
+     "slot": 6,
+     "itemId": 3360608010,
+     "count": 20
+    },
+    {
+     "page": 1380,
+     "slot": 7,
+     "itemId": 3360608010,
+     "count": 20
+    },
+    {
+     "page": 1381,
+     "slot": 0,
+     "itemId": 3360608010,
+     "count": 20
+    },
+    {
+     "page": 1381,
+     "slot": 1,
+     "itemId": 3360608010,
+     "count": 20
+    },
+    {
+     "page": 1381,
+     "slot": 2,
+     "itemId": 3360608010,
+     "count": 20
+    },
+    {
+     "page": 1381,
+     "slot": 3,
+     "itemId": 3360608010,
+     "count": 12
+    },
+    {
+     "page": 1381,
+     "slot": 4,
+     "itemId": 2666875137,
+     "count": 49
+    }
+   ]
+  },
+  {
+   "entity": 1261,
+   "label": "K-L Seeds",
+   "named": true,
+   "position": [
+    3234,
+    835.5,
+    2064.99
+   ],
+   "slotsTotal": 32,
+   "stacks": []
+  },
+  {
+   "entity": 1314,
+   "label": "Two-Handed Sword",
+   "named": true,
+   "position": [
+    3230.5,
+    835.5,
+    2082
+   ],
+   "slotsTotal": 32,
+   "stacks": [
+    {
+     "page": 1314,
+     "slot": 0,
+     "itemId": 2155262535,
+     "count": 1
+    },
+    {
+     "page": 1314,
+     "slot": 1,
+     "itemId": 2574399380,
+     "count": 1
+    },
+    {
+     "page": 1314,
+     "slot": 2,
+     "itemId": 3960008381,
+     "count": 1
+    },
+    {
+     "page": 1314,
+     "slot": 3,
+     "itemId": 2671932055,
+     "count": 1
+    },
+    {
+     "page": 1314,
+     "slot": 4,
+     "itemId": 3855021353,
+     "count": 1
+    },
+    {
+     "page": 1314,
+     "slot": 5,
+     "itemId": 3960008381,
+     "count": 1
+    }
+   ]
+  },
+  {
+   "entity": 1270,
+   "label": "empty chest 1",
+   "named": false,
+   "position": [
+    3225.5,
+    835.5,
+    2076.5
+   ],
+   "slotsTotal": 32,
+   "stacks": []
+  },
+  {
+   "entity": 1171,
+   "label": "Head Armor",
+   "named": true,
+   "position": [
+    3227.5,
+    834.5,
+    2082
+   ],
+   "slotsTotal": 32,
+   "stacks": [
+    {
+     "page": 1171,
+     "slot": 0,
+     "itemId": 2585181438,
+     "count": 1
+    },
+    {
+     "page": 1171,
+     "slot": 1,
+     "itemId": 3359562849,
+     "count": 1
+    },
+    {
+     "page": 1171,
+     "slot": 2,
+     "itemId": 4153283154,
+     "count": 1
+    },
+    {
+     "page": 1171,
+     "slot": 3,
+     "itemId": 2987600300,
+     "count": 1
+    }
+   ]
+  },
+  {
+   "entity": 1290,
+   "label": "One-Handed Club",
+   "named": true,
+   "position": [
+    3227.5,
+    835.5,
+    2082
+   ],
+   "slotsTotal": 32,
+   "stacks": [
+    {
+     "page": 1290,
+     "slot": 0,
+     "itemId": 1676088364,
+     "count": 1
+    },
+    {
+     "page": 1290,
+     "slot": 1,
+     "itemId": 2646707458,
+     "count": 1
+    },
+    {
+     "page": 1290,
+     "slot": 2,
+     "itemId": 4110381914,
+     "count": 1
+    },
+    {
+     "page": 1290,
+     "slot": 3,
+     "itemId": 1474722178,
+     "count": 1
+    },
+    {
+     "page": 1290,
+     "slot": 4,
+     "itemId": 1474722178,
+     "count": 1
+    }
+   ]
+  },
+  {
+   "entity": 1306,
+   "label": "One-Handed Axe",
+   "named": true,
+   "position": [
+    3229.5,
+    835.5,
+    2082
+   ],
+   "slotsTotal": 32,
+   "stacks": [
+    {
+     "page": 1306,
+     "slot": 0,
+     "itemId": 3205048904,
+     "count": 1
+    },
+    {
+     "page": 1306,
+     "slot": 1,
+     "itemId": 1094447119,
+     "count": 1
+    },
+    {
+     "page": 1306,
+     "slot": 2,
+     "itemId": 3026017602,
+     "count": 1
+    },
+    {
+     "page": 1306,
+     "slot": 3,
+     "itemId": 2396593895,
+     "count": 1
+    }
+   ]
+  },
+  {
+   "entity": 1067,
+   "label": "Staves & Spells",
+   "named": true,
+   "position": [
+    3223,
+    834.5,
+    2062.49
+   ],
+   "slotsTotal": 32,
+   "stacks": [
+    {
+     "page": 1067,
+     "slot": 0,
+     "itemId": 1157288032,
+     "count": 1
+    },
+    {
+     "page": 1067,
+     "slot": 1,
+     "itemId": 2515033100,
+     "count": 1
+    },
+    {
+     "page": 1067,
+     "slot": 2,
+     "itemId": 2515033100,
+     "count": 1
+    },
+    {
+     "page": 1067,
+     "slot": 3,
+     "itemId": 3371766557,
+     "count": 1
+    },
+    {
+     "page": 1067,
+     "slot": 4,
+     "itemId": 3371766557,
+     "count": 1
+    },
+    {
+     "page": 1067,
+     "slot": 5,
+     "itemId": 1255239784,
+     "count": 1
+    },
+    {
+     "page": 1067,
+     "slot": 6,
+     "itemId": 1404050036,
+     "count": 1
+    },
+    {
+     "page": 1067,
+     "slot": 7,
+     "itemId": 3650841772,
+     "count": 1
+    },
+    {
+     "page": 1076,
+     "slot": 0,
+     "itemId": 147615610,
+     "count": 256
+    },
+    {
+     "page": 1076,
+     "slot": 1,
+     "itemId": 471823515,
+     "count": 18
+    },
+    {
+     "page": 1076,
+     "slot": 2,
+     "itemId": 738997972,
+     "count": 19
+    },
+    {
+     "page": 1076,
+     "slot": 3,
+     "itemId": 875842012,
+     "count": 11
+    },
+    {
+     "page": 1076,
+     "slot": 4,
+     "itemId": 901722888,
+     "count": 19
+    },
+    {
+     "page": 1076,
+     "slot": 5,
+     "itemId": 1048548069,
+     "count": 148
+    },
+    {
+     "page": 1076,
+     "slot": 6,
+     "itemId": 1790474262,
+     "count": 190
+    },
+    {
+     "page": 1076,
+     "slot": 7,
+     "itemId": 1833734179,
+     "count": 42
+    },
+    {
+     "page": 1077,
+     "slot": 0,
+     "itemId": 1843940779,
+     "count": 396
+    },
+    {
+     "page": 1077,
+     "slot": 1,
+     "itemId": 1899806950,
+     "count": 310
+    },
+    {
+     "page": 1077,
+     "slot": 2,
+     "itemId": 2728050036,
+     "count": 121
+    },
+    {
+     "page": 1077,
+     "slot": 3,
+     "itemId": 3169292847,
+     "count": 500
+    },
+    {
+     "page": 1077,
+     "slot": 4,
+     "itemId": 3169292847,
+     "count": 53
+    },
+    {
+     "page": 1077,
+     "slot": 5,
+     "itemId": 3878494540,
+     "count": 141
+    },
+    {
+     "page": 1077,
+     "slot": 6,
+     "itemId": 3918049792,
+     "count": 374
+    }
+   ]
+  },
+  {
+   "entity": 1299,
+   "label": "Two-Handed Axe",
+   "named": true,
+   "position": [
+    3228.5,
+    835.5,
+    2082
+   ],
+   "slotsTotal": 32,
+   "stacks": [
+    {
+     "page": 1299,
+     "slot": 0,
+     "itemId": 3486546660,
+     "count": 1
+    },
+    {
+     "page": 1299,
+     "slot": 1,
+     "itemId": 101298280,
+     "count": 1
+    },
+    {
+     "page": 1299,
+     "slot": 2,
+     "itemId": 3304320872,
+     "count": 1
+    }
+   ]
+  },
+  {
+   "entity": 1271,
+   "label": "Daggers",
+   "named": true,
+   "position": [
+    3225.5,
+    835.5,
+    2082
+   ],
+   "slotsTotal": 32,
+   "stacks": [
+    {
+     "page": 1271,
+     "slot": 0,
+     "itemId": 3056420264,
+     "count": 1
+    },
+    {
+     "page": 1271,
+     "slot": 1,
+     "itemId": 301510235,
+     "count": 1
+    },
+    {
+     "page": 1271,
+     "slot": 2,
+     "itemId": 803635338,
+     "count": 1
+    },
+    {
+     "page": 1271,
+     "slot": 3,
+     "itemId": 392894300,
+     "count": 1
+    },
+    {
+     "page": 1271,
+     "slot": 4,
+     "itemId": 1008092854,
+     "count": 1
+    },
+    {
+     "page": 1271,
+     "slot": 5,
+     "itemId": 392894300,
+     "count": 1
+    },
+    {
+     "page": 1271,
+     "slot": 6,
+     "itemId": 301510235,
+     "count": 1
+    }
+   ]
+  },
+  {
+   "entity": 1032,
+   "label": "Water & Tools",
+   "named": true,
+   "position": [
+    3189.01,
+    834,
+    2049
+   ],
+   "slotsTotal": 24,
+   "stacks": [
+    {
+     "page": 1032,
+     "slot": 0,
+     "itemId": 2395034423,
+     "count": 1
+    },
+    {
+     "page": 1032,
+     "slot": 1,
+     "itemId": 2395034423,
+     "count": 1
+    },
+    {
+     "page": 1032,
+     "slot": 2,
+     "itemId": 1326647808,
+     "count": 1
+    },
+    {
+     "page": 1032,
+     "slot": 4,
+     "itemId": 1326647808,
+     "count": 5
+    },
+    {
+     "page": 1032,
+     "slot": 5,
+     "itemId": 1240116813,
+     "count": 1
+    }
+   ]
+  },
+  {
+   "entity": 1063,
+   "label": "Potions",
+   "named": true,
+   "position": [
+    3222,
+    834.5,
+    2062.49
+   ],
+   "slotsTotal": 32,
+   "stacks": [
+    {
+     "page": 1063,
+     "slot": 0,
+     "itemId": 83248261,
+     "count": 20
+    },
+    {
+     "page": 1063,
+     "slot": 1,
+     "itemId": 83248261,
+     "count": 20
+    },
+    {
+     "page": 1063,
+     "slot": 2,
+     "itemId": 83248261,
+     "count": 20
+    },
+    {
+     "page": 1063,
+     "slot": 3,
+     "itemId": 83248261,
+     "count": 20
+    },
+    {
+     "page": 1063,
+     "slot": 4,
+     "itemId": 83248261,
+     "count": 20
+    },
+    {
+     "page": 1063,
+     "slot": 5,
+     "itemId": 83248261,
+     "count": 13
+    },
+    {
+     "page": 1063,
+     "slot": 6,
+     "itemId": 1782997504,
+     "count": 20
+    },
+    {
+     "page": 1063,
+     "slot": 7,
+     "itemId": 1782997504,
+     "count": 20
+    },
+    {
+     "page": 1064,
+     "slot": 0,
+     "itemId": 1782997504,
+     "count": 10
+    },
+    {
+     "page": 1064,
+     "slot": 1,
+     "itemId": 2949322768,
+     "count": 4
+    },
+    {
+     "page": 1064,
+     "slot": 2,
+     "itemId": 3436474234,
+     "count": 20
+    },
+    {
+     "page": 1064,
+     "slot": 3,
+     "itemId": 3436474234,
+     "count": 20
+    },
+    {
+     "page": 1064,
+     "slot": 4,
+     "itemId": 3436474234,
+     "count": 20
+    },
+    {
+     "page": 1064,
+     "slot": 5,
+     "itemId": 3436474234,
+     "count": 11
+    },
+    {
+     "page": 1064,
+     "slot": 6,
+     "itemId": 3441701492,
+     "count": 20
+    },
+    {
+     "page": 1064,
+     "slot": 7,
+     "itemId": 3441701492,
+     "count": 9
+    },
+    {
+     "page": 1065,
+     "slot": 0,
+     "itemId": 4223175738,
+     "count": 4
+    },
+    {
+     "page": 1065,
+     "slot": 1,
+     "itemId": 209497692,
+     "count": 2
+    },
+    {
+     "page": 1065,
+     "slot": 2,
+     "itemId": 1509402971,
+     "count": 1
+    },
+    {
+     "page": 1065,
+     "slot": 3,
+     "itemId": 2206945282,
+     "count": 20
+    },
+    {
+     "page": 1065,
+     "slot": 4,
+     "itemId": 2206945282,
+     "count": 20
+    },
+    {
+     "page": 1065,
+     "slot": 5,
+     "itemId": 2206945282,
+     "count": 6
+    },
+    {
+     "page": 1065,
+     "slot": 6,
+     "itemId": 2635793540,
+     "count": 20
+    },
+    {
+     "page": 1065,
+     "slot": 7,
+     "itemId": 3102924359,
+     "count": 20
+    },
+    {
+     "page": 1066,
+     "slot": 0,
+     "itemId": 3102924359,
+     "count": 7
+    },
+    {
+     "page": 1066,
+     "slot": 1,
+     "itemId": 386738695,
+     "count": 18
+    },
+    {
+     "page": 1066,
+     "slot": 2,
+     "itemId": 2239380894,
+     "count": 20
+    },
+    {
+     "page": 1066,
+     "slot": 3,
+     "itemId": 2239380894,
+     "count": 8
+    },
+    {
+     "page": 1066,
+     "slot": 4,
+     "itemId": 2635793540,
+     "count": 6
+    }
+   ]
+  },
+  {
+   "entity": 1226,
+   "label": "Wands",
+   "named": true,
+   "position": [
+    3223,
+    835.5,
+    2062.49
+   ],
+   "slotsTotal": 32,
+   "stacks": [
+    {
+     "page": 1226,
+     "slot": 0,
+     "itemId": 1111770772,
+     "count": 1
+    },
+    {
+     "page": 1226,
+     "slot": 1,
+     "itemId": 1595482967,
+     "count": 1
+    },
+    {
+     "page": 1226,
+     "slot": 2,
+     "itemId": 1693828837,
+     "count": 1
+    },
+    {
+     "page": 1226,
+     "slot": 3,
+     "itemId": 1792316220,
+     "count": 1
+    },
+    {
+     "page": 1226,
+     "slot": 4,
+     "itemId": 3419190942,
+     "count": 1
+    },
+    {
+     "page": 1226,
+     "slot": 5,
+     "itemId": 3566462451,
+     "count": 1
+    },
+    {
+     "page": 1226,
+     "slot": 6,
+     "itemId": 571871007,
+     "count": 1
+    },
+    {
+     "page": 1226,
+     "slot": 7,
+     "itemId": 571871007,
+     "count": 1
+    },
+    {
+     "page": 1237,
+     "slot": 0,
+     "itemId": 1276754499,
+     "count": 1
+    },
+    {
+     "page": 1237,
+     "slot": 1,
+     "itemId": 1595482967,
+     "count": 1
+    }
+   ]
+  },
+  {
+   "entity": 1133,
+   "label": "empty chest 1",
+   "named": false,
+   "position": [
+    3225.5,
+    834.5,
+    2076.5
+   ],
+   "slotsTotal": 32,
+   "stacks": []
+  },
+  {
+   "entity": 1200,
+   "label": "Foot Armor",
+   "named": true,
+   "position": [
+    3231.5,
+    834.5,
+    2082
+   ],
+   "slotsTotal": 32,
+   "stacks": [
+    {
+     "page": 1200,
+     "slot": 0,
+     "itemId": 1677017695,
+     "count": 1
+    },
+    {
+     "page": 1200,
+     "slot": 1,
+     "itemId": 2147223774,
+     "count": 1
+    },
+    {
+     "page": 1200,
+     "slot": 2,
+     "itemId": 2147223774,
+     "count": 1
+    },
+    {
+     "page": 1200,
+     "slot": 3,
+     "itemId": 3648424321,
+     "count": 1
+    },
+    {
+     "page": 1200,
+     "slot": 4,
+     "itemId": 1177540804,
+     "count": 1
+    },
+    {
+     "page": 1200,
+     "slot": 7,
+     "itemId": 265162097,
+     "count": 1
+    }
+   ]
+  },
+  {
+   "entity": 1142,
+   "label": "Rings",
+   "named": true,
+   "position": [
+    3225.5,
+    834.5,
+    2082
+   ],
+   "slotsTotal": 32,
+   "stacks": [
+    {
+     "page": 1142,
+     "slot": 0,
+     "itemId": 18908173,
+     "count": 1
+    },
+    {
+     "page": 1142,
+     "slot": 1,
+     "itemId": 18908173,
+     "count": 1
+    },
+    {
+     "page": 1142,
+     "slot": 2,
+     "itemId": 857219651,
+     "count": 1
+    },
+    {
+     "page": 1142,
+     "slot": 3,
+     "itemId": 857219651,
+     "count": 1
+    },
+    {
+     "page": 1142,
+     "slot": 4,
+     "itemId": 857219651,
+     "count": 1
+    },
+    {
+     "page": 1142,
+     "slot": 5,
+     "itemId": 857219651,
+     "count": 1
+    },
+    {
+     "page": 1142,
+     "slot": 6,
+     "itemId": 1376923158,
+     "count": 1
+    },
+    {
+     "page": 1142,
+     "slot": 7,
+     "itemId": 1376923158,
+     "count": 1
+    },
+    {
+     "page": 1156,
+     "slot": 0,
+     "itemId": 4070275753,
+     "count": 1
+    },
+    {
+     "page": 1156,
+     "slot": 1,
+     "itemId": 4070275753,
+     "count": 1
+    },
+    {
+     "page": 1156,
+     "slot": 2,
+     "itemId": 1376923158,
+     "count": 1
+    },
+    {
+     "page": 1156,
+     "slot": 3,
+     "itemId": 4275592172,
+     "count": 1
+    },
+    {
+     "page": 1156,
+     "slot": 4,
+     "itemId": 4275592172,
+     "count": 1
+    },
+    {
+     "page": 1156,
+     "slot": 5,
+     "itemId": 1652235601,
+     "count": 1
+    },
+    {
+     "page": 1156,
+     "slot": 7,
+     "itemId": 425702640,
+     "count": 1
+    }
+   ]
+  },
+  {
+   "entity": 1079,
+   "label": "Bows & Arrows",
+   "named": true,
+   "position": [
+    3224,
+    834.5,
+    2062.49
+   ],
+   "slotsTotal": 32,
+   "stacks": [
+    {
+     "page": 1079,
+     "slot": 0,
+     "itemId": 476811263,
+     "count": 1
+    },
+    {
+     "page": 1079,
+     "slot": 1,
+     "itemId": 2242220014,
+     "count": 1
+    },
+    {
+     "page": 1079,
+     "slot": 2,
+     "itemId": 3540633303,
+     "count": 1
+    },
+    {
+     "page": 1079,
+     "slot": 3,
+     "itemId": 3881967409,
+     "count": 1
+    },
+    {
+     "page": 1079,
+     "slot": 4,
+     "itemId": 886466633,
+     "count": 1
+    },
+    {
+     "page": 1079,
+     "slot": 5,
+     "itemId": 2296172399,
+     "count": 1
+    },
+    {
+     "page": 1079,
+     "slot": 6,
+     "itemId": 1247095576,
+     "count": 357
+    },
+    {
+     "page": 1079,
+     "slot": 7,
+     "itemId": 1422216404,
+     "count": 500
+    },
+    {
+     "page": 1086,
+     "slot": 0,
+     "itemId": 1422216404,
+     "count": 166
+    },
+    {
+     "page": 1086,
+     "slot": 1,
+     "itemId": 1536235498,
+     "count": 59
+    },
+    {
+     "page": 1086,
+     "slot": 2,
+     "itemId": 1729479389,
+     "count": 500
+    },
+    {
+     "page": 1086,
+     "slot": 3,
+     "itemId": 1729479389,
+     "count": 255
+    },
+    {
+     "page": 1086,
+     "slot": 4,
+     "itemId": 2172551026,
+     "count": 191
+    },
+    {
+     "page": 1086,
+     "slot": 5,
+     "itemId": 2919301642,
+     "count": 194
+    },
+    {
+     "page": 1086,
+     "slot": 6,
+     "itemId": 4046432840,
+     "count": 500
+    },
+    {
+     "page": 1086,
+     "slot": 7,
+     "itemId": 4046432840,
+     "count": 94
+    },
+    {
+     "page": 1087,
+     "slot": 0,
+     "itemId": 3990911183,
+     "count": 98
+    },
+    {
+     "page": 1087,
+     "slot": 1,
+     "itemId": 551568007,
+     "count": 22
+    }
+   ]
+  },
+  {
+   "entity": 1134,
+   "label": "Fossils",
+   "named": true,
+   "position": [
+    3230.5,
+    834.5,
+    2076.5
+   ],
+   "slotsTotal": 32,
+   "stacks": [
+    {
+     "page": 1134,
+     "slot": 0,
+     "itemId": 2330097805,
+     "count": 1
+    },
+    {
+     "page": 1134,
+     "slot": 1,
+     "itemId": 2414905485,
+     "count": 1
+    },
+    {
+     "page": 1134,
+     "slot": 2,
+     "itemId": 3773857537,
+     "count": 1
+    },
+    {
+     "page": 1134,
+     "slot": 3,
+     "itemId": 451517866,
+     "count": 1
+    },
+    {
+     "page": 1134,
+     "slot": 4,
+     "itemId": 2845222341,
+     "count": 1
+    }
+   ]
+  },
+  {
+   "entity": 1038,
+   "label": "empty chest 1",
+   "named": false,
+   "position": [
+    3189.01,
+    834,
+    2051
+   ],
+   "slotsTotal": 24,
+   "stacks": []
+  },
+  {
+   "entity": 1178,
+   "label": "Upper Body Armor",
+   "named": true,
+   "position": [
+    3228.5,
+    834.5,
+    2082
+   ],
+   "slotsTotal": 32,
+   "stacks": [
+    {
+     "page": 1178,
+     "slot": 0,
+     "itemId": 3532723599,
+     "count": 1
+    },
+    {
+     "page": 1178,
+     "slot": 1,
+     "itemId": 1033045151,
+     "count": 1
+    },
+    {
+     "page": 1178,
+     "slot": 2,
+     "itemId": 1033045151,
+     "count": 1
+    },
+    {
+     "page": 1178,
+     "slot": 3,
+     "itemId": 1343249024,
+     "count": 1
+    },
+    {
+     "page": 1178,
+     "slot": 4,
+     "itemId": 2675141124,
+     "count": 1
+    },
+    {
+     "page": 1178,
+     "slot": 5,
+     "itemId": 1582871397,
+     "count": 1
+    }
+   ]
+  },
+  {
+   "entity": 1159,
+   "label": "Shields",
+   "named": true,
+   "position": [
+    3226.5,
+    834.5,
+    2082
+   ],
+   "slotsTotal": 32,
+   "stacks": [
+    {
+     "page": 1159,
+     "slot": 0,
+     "itemId": 300032798,
+     "count": 1
+    },
+    {
+     "page": 1159,
+     "slot": 1,
+     "itemId": 1405047893,
+     "count": 1
+    },
+    {
+     "page": 1159,
+     "slot": 2,
+     "itemId": 419035885,
+     "count": 1
+    },
+    {
+     "page": 1159,
+     "slot": 3,
+     "itemId": 2165424296,
+     "count": 1
+    },
+    {
+     "page": 1159,
+     "slot": 4,
+     "itemId": 3744513726,
+     "count": 1
+    },
+    {
+     "page": 1159,
+     "slot": 5,
+     "itemId": 1828068654,
+     "count": 1
+    },
+    {
+     "page": 1159,
+     "slot": 6,
+     "itemId": 4004201468,
+     "count": 1
+    },
+    {
+     "page": 1159,
+     "slot": 7,
+     "itemId": 4004201468,
+     "count": 1
+    }
+   ]
+  },
+  {
+   "entity": 1282,
+   "label": "Two-Handed Hammer/Club",
+   "named": true,
+   "position": [
+    3226.5,
+    835.5,
+    2082
+   ],
+   "slotsTotal": 32,
+   "stacks": [
+    {
+     "page": 1282,
+     "slot": 0,
+     "itemId": 3034847985,
+     "count": 1
+    },
+    {
+     "page": 1282,
+     "slot": 1,
+     "itemId": 4134797150,
+     "count": 1
+    },
+    {
+     "page": 1282,
+     "slot": 2,
+     "itemId": 4071675176,
+     "count": 1
+    },
+    {
+     "page": 1282,
+     "slot": 3,
+     "itemId": 4134797150,
+     "count": 1
+    }
+   ]
+  },
+  {
+   "entity": 1048,
+   "label": "Consumables",
+   "named": true,
+   "position": [
+    3221,
+    834.5,
+    2062.49
+   ],
+   "slotsTotal": 32,
+   "stacks": [
+    {
+     "page": 1048,
+     "slot": 0,
+     "itemId": 2897843384,
+     "count": 8
+    },
+    {
+     "page": 1048,
+     "slot": 1,
+     "itemId": 2361121883,
+     "count": 1
+    },
+    {
+     "page": 1048,
+     "slot": 2,
+     "itemId": 1539486909,
+     "count": 20
+    },
+    {
+     "page": 1048,
+     "slot": 4,
+     "itemId": 3833797336,
+     "count": 1
+    },
+    {
+     "page": 1048,
+     "slot": 5,
+     "itemId": 3833797336,
+     "count": 1
+    },
+    {
+     "page": 1048,
+     "slot": 6,
+     "itemId": 3833797336,
+     "count": 1
+    },
+    {
+     "page": 1048,
+     "slot": 7,
+     "itemId": 3833797336,
+     "count": 1
+    },
+    {
+     "page": 1060,
+     "slot": 0,
+     "itemId": 3833797336,
+     "count": 1
+    },
+    {
+     "page": 1060,
+     "slot": 1,
+     "itemId": 3833797336,
+     "count": 1
+    },
+    {
+     "page": 1060,
+     "slot": 2,
+     "itemId": 3833797336,
+     "count": 1
+    },
+    {
+     "page": 1060,
+     "slot": 3,
+     "itemId": 3833797336,
+     "count": 1
+    },
+    {
+     "page": 1060,
+     "slot": 4,
+     "itemId": 3833797336,
+     "count": 1
+    },
+    {
+     "page": 1060,
+     "slot": 5,
+     "itemId": 2433487720,
+     "count": 139
+    },
+    {
+     "page": 1060,
+     "slot": 6,
+     "itemId": 2897843384,
+     "count": 1
+    },
+    {
+     "page": 1060,
+     "slot": 7,
+     "itemId": 2897843384,
+     "count": 3
+    },
+    {
+     "page": 1061,
+     "slot": 0,
+     "itemId": 3833797336,
+     "count": 1
+    },
+    {
+     "page": 1061,
+     "slot": 1,
+     "itemId": 3833797336,
+     "count": 1
+    },
+    {
+     "page": 1061,
+     "slot": 2,
+     "itemId": 2897843384,
+     "count": 5
+    },
+    {
+     "page": 1061,
+     "slot": 3,
+     "itemId": 3244772462,
+     "count": 5
+    },
+    {
+     "page": 1061,
+     "slot": 4,
+     "itemId": 3244772462,
+     "count": 4
+    },
+    {
+     "page": 1061,
+     "slot": 5,
+     "itemId": 3244772462,
+     "count": 1
+    }
+   ]
+  },
+  {
+   "entity": 1240,
+   "label": "Scrolls & Totems",
+   "named": true,
+   "position": [
+    3224,
+    835.5,
+    2062.49
+   ],
+   "slotsTotal": 32,
+   "stacks": [
+    {
+     "page": 1240,
+     "slot": 0,
+     "itemId": 2058567631,
+     "count": 9
+    },
+    {
+     "page": 1240,
+     "slot": 1,
+     "itemId": 4044132453,
+     "count": 12
+    },
+    {
+     "page": 1240,
+     "slot": 2,
+     "itemId": 2830104367,
+     "count": 20
+    },
+    {
+     "page": 1240,
+     "slot": 3,
+     "itemId": 632849243,
+     "count": 36
+    },
+    {
+     "page": 1240,
+     "slot": 4,
+     "itemId": 127804572,
+     "count": 2
+    }
+   ]
+  },
+  {
+   "entity": 1324,
+   "label": "One-Handed Sword",
+   "named": true,
+   "position": [
+    3231.5,
+    835.5,
+    2082
+   ],
+   "slotsTotal": 32,
+   "stacks": [
+    {
+     "page": 1324,
+     "slot": 0,
+     "itemId": 729180175,
+     "count": 1
+    },
+    {
+     "page": 1324,
+     "slot": 1,
+     "itemId": 1181594089,
+     "count": 1
+    },
+    {
+     "page": 1324,
+     "slot": 2,
+     "itemId": 1919278140,
+     "count": 1
+    },
+    {
+     "page": 1324,
+     "slot": 3,
+     "itemId": 662464113,
+     "count": 1
+    },
+    {
+     "page": 1324,
+     "slot": 4,
+     "itemId": 3238923785,
+     "count": 1
+    },
+    {
+     "page": 1324,
+     "slot": 5,
+     "itemId": 2093048225,
+     "count": 1
+    }
+   ]
+  },
+  {
+   "entity": 1138,
+   "label": "Other Collectibles",
+   "named": true,
+   "position": [
+    3231.5,
+    834.5,
+    2076.5
+   ],
+   "slotsTotal": 32,
+   "stacks": [
+    {
+     "page": 1138,
+     "slot": 0,
+     "itemId": 3794499900,
+     "count": 1
+    }
+   ]
+  },
+  {
+   "entity": 1187,
+   "label": "Arm Armor",
+   "named": true,
+   "position": [
+    3229.5,
+    834.5,
+    2082
+   ],
+   "slotsTotal": 32,
+   "stacks": [
+    {
+     "page": 1187,
+     "slot": 0,
+     "itemId": 773065948,
+     "count": 1
+    },
+    {
+     "page": 1187,
+     "slot": 1,
+     "itemId": 2710208454,
+     "count": 1
+    }
+   ]
+  },
+  {
+   "entity": 1124,
+   "label": "Cosmetic Armor",
+   "named": true,
+   "position": [
+    3224.5,
+    834.5,
+    2076.5
+   ],
+   "slotsTotal": 32,
+   "stacks": [
+    {
+     "page": 1124,
+     "slot": 0,
+     "itemId": 147255114,
+     "count": 1
+    },
+    {
+     "page": 1124,
+     "slot": 1,
+     "itemId": 533002465,
+     "count": 1
+    },
+    {
+     "page": 1124,
+     "slot": 2,
+     "itemId": 2434837386,
+     "count": 1
+    },
+    {
+     "page": 1124,
+     "slot": 3,
+     "itemId": 3123715137,
+     "count": 1
+    },
+    {
+     "page": 1124,
+     "slot": 4,
+     "itemId": 3170807453,
+     "count": 1
+    },
+    {
+     "page": 1124,
+     "slot": 5,
+     "itemId": 3599207220,
+     "count": 1
+    },
+    {
+     "page": 1124,
+     "slot": 6,
+     "itemId": 3771575140,
+     "count": 1
+    },
+    {
+     "page": 1124,
+     "slot": 7,
+     "itemId": 3799859133,
+     "count": 1
+    }
+   ]
+  },
+  {
+   "entity": 1089,
+   "label": "Explosives",
+   "named": true,
+   "position": [
+    3225,
+    834.5,
+    2062.49
+   ],
+   "slotsTotal": 32,
+   "stacks": [
+    {
+     "page": 1089,
+     "slot": 0,
+     "itemId": 2283229289,
+     "count": 20
+    },
+    {
+     "page": 1089,
+     "slot": 1,
+     "itemId": 2283229289,
+     "count": 20
+    },
+    {
+     "page": 1089,
+     "slot": 2,
+     "itemId": 2283229289,
+     "count": 20
+    },
+    {
+     "page": 1089,
+     "slot": 3,
+     "itemId": 2283229289,
+     "count": 20
+    },
+    {
+     "page": 1089,
+     "slot": 4,
+     "itemId": 2283229289,
+     "count": 20
+    },
+    {
+     "page": 1089,
+     "slot": 5,
+     "itemId": 2283229289,
+     "count": 20
+    },
+    {
+     "page": 1089,
+     "slot": 6,
+     "itemId": 2283229289,
+     "count": 20
+    },
+    {
+     "page": 1089,
+     "slot": 7,
+     "itemId": 2283229289,
+     "count": 20
+    },
+    {
+     "page": 1090,
+     "slot": 0,
+     "itemId": 2283229289,
+     "count": 20
+    },
+    {
+     "page": 1090,
+     "slot": 1,
+     "itemId": 2283229289,
+     "count": 20
+    },
+    {
+     "page": 1090,
+     "slot": 2,
+     "itemId": 2283229289,
+     "count": 20
+    },
+    {
+     "page": 1090,
+     "slot": 3,
+     "itemId": 2283229289,
+     "count": 20
+    },
+    {
+     "page": 1090,
+     "slot": 4,
+     "itemId": 2283229289,
+     "count": 20
+    },
+    {
+     "page": 1090,
+     "slot": 5,
+     "itemId": 2283229289,
+     "count": 20
+    },
+    {
+     "page": 1090,
+     "slot": 6,
+     "itemId": 2283229289,
+     "count": 20
+    },
+    {
+     "page": 1090,
+     "slot": 7,
+     "itemId": 2283229289,
+     "count": 20
+    },
+    {
+     "page": 1091,
+     "slot": 0,
+     "itemId": 2283229289,
+     "count": 20
+    },
+    {
+     "page": 1091,
+     "slot": 1,
+     "itemId": 2283229289,
+     "count": 20
+    },
+    {
+     "page": 1091,
+     "slot": 2,
+     "itemId": 2283229289,
+     "count": 20
+    },
+    {
+     "page": 1091,
+     "slot": 3,
+     "itemId": 2283229289,
+     "count": 20
+    },
+    {
+     "page": 1091,
+     "slot": 4,
+     "itemId": 2283229289,
+     "count": 20
+    },
+    {
+     "page": 1091,
+     "slot": 5,
+     "itemId": 2283229289,
+     "count": 20
+    },
+    {
+     "page": 1091,
+     "slot": 6,
+     "itemId": 2283229289,
+     "count": 20
+    },
+    {
+     "page": 1091,
+     "slot": 7,
+     "itemId": 2283229289,
+     "count": 20
+    },
+    {
+     "page": 1092,
+     "slot": 0,
+     "itemId": 2283229289,
+     "count": 10
+    },
+    {
+     "page": 1092,
+     "slot": 1,
+     "itemId": 3124613974,
+     "count": 16
+    },
+    {
+     "page": 1092,
+     "slot": 2,
+     "itemId": 4233298973,
+     "count": 2
+    }
+   ]
+  },
+  {
+   "entity": 1192,
+   "label": "Lower Body Armor",
+   "named": true,
+   "position": [
+    3230.5,
+    834.5,
+    2082
+   ],
+   "slotsTotal": 32,
+   "stacks": [
+    {
+     "page": 1192,
+     "slot": 0,
+     "itemId": 4211391947,
+     "count": 1
+    },
+    {
+     "page": 1192,
+     "slot": 1,
+     "itemId": 2519499294,
+     "count": 1
+    },
+    {
+     "page": 1192,
+     "slot": 2,
+     "itemId": 2164129974,
+     "count": 1
+    },
+    {
+     "page": 1192,
+     "slot": 3,
+     "itemId": 1314474617,
+     "count": 1
+    }
+   ]
+  },
+  {
+   "entity": 1244,
+   "label": "Tools & Torches",
+   "named": true,
+   "position": [
+    3225,
+    835.5,
+    2062.49
+   ],
+   "slotsTotal": 32,
+   "stacks": [
+    {
+     "page": 1244,
+     "slot": 0,
+     "itemId": 1083013738,
+     "count": 1
+    },
+    {
+     "page": 1244,
+     "slot": 1,
+     "itemId": 1986896347,
+     "count": 1
+    },
+    {
+     "page": 1244,
+     "slot": 2,
+     "itemId": 3474096535,
+     "count": 1
+    },
+    {
+     "page": 1244,
+     "slot": 3,
+     "itemId": 2176546463,
+     "count": 1
+    },
+    {
+     "page": 1244,
+     "slot": 4,
+     "itemId": 3474096535,
+     "count": 1
+    },
+    {
+     "page": 1244,
+     "slot": 5,
+     "itemId": 3474096535,
+     "count": 1
+    },
+    {
+     "page": 1244,
+     "slot": 6,
+     "itemId": 3793200211,
+     "count": 1
+    },
+    {
+     "page": 1244,
+     "slot": 7,
+     "itemId": 213939880,
+     "count": 1
+    },
+    {
+     "page": 1250,
+     "slot": 0,
+     "itemId": 213939880,
+     "count": 1
+    },
+    {
+     "page": 1250,
+     "slot": 1,
+     "itemId": 2574733718,
+     "count": 1
+    },
+    {
+     "page": 1250,
+     "slot": 2,
+     "itemId": 1004393385,
+     "count": 1
+    },
+    {
+     "page": 1250,
+     "slot": 3,
+     "itemId": 2231489185,
+     "count": 1
+    },
+    {
+     "page": 1250,
+     "slot": 4,
+     "itemId": 333200327,
+     "count": 1
+    }
+   ]
+  },
+  {
+   "entity": 1037,
+   "label": "Tree & Bush Seeds",
+   "named": true,
+   "position": [
+    3189.01,
+    834,
+    2050
+   ],
+   "slotsTotal": 24,
+   "stacks": []
+  }
+ ],
+ "pages": [
+  {
+   "page": 2,
+   "kind": "equipment",
+   "hotbar": false
+  },
+  {
+   "page": 107871,
+   "kind": "equipment",
+   "hotbar": false
+  },
+  {
+   "page": 107880,
+   "kind": "backpack",
+   "hotbar": false
+  },
+  {
+   "page": 107881,
+   "kind": "backpack",
+   "hotbar": false
+  },
+  {
+   "page": 107882,
+   "kind": "backpack",
+   "hotbar": true
+  },
+  {
+   "page": 107883,
+   "kind": "backpack",
+   "hotbar": true
+  },
+  {
+   "page": 107884,
+   "kind": "backpack",
+   "hotbar": false
+  },
+  {
+   "page": 107870,
+   "kind": "backpack-extra",
+   "hotbar": false
+  },
+  {
+   "page": 107886,
+   "kind": "currency",
+   "hotbar": false
+  },
+  {
+   "page": 107885,
+   "kind": "backpack",
+   "hotbar": false
+  }
+ ],
+ "backpack": [
+  {
+   "page": 2,
+   "slot": 0,
+   "itemId": 3948210071,
+   "count": 1
+  },
+  {
+   "page": 2,
+   "slot": 1,
+   "itemId": 333350411,
+   "count": 1
+  },
+  {
+   "page": 2,
+   "slot": 2,
+   "itemId": 357631245,
+   "count": 1
+  },
+  {
+   "page": 2,
+   "slot": 3,
+   "itemId": 3224594917,
+   "count": 1
+  },
+  {
+   "page": 2,
+   "slot": 4,
+   "itemId": 2434837386,
+   "count": 1
+  },
+  {
+   "page": 2,
+   "slot": 5,
+   "itemId": 573920683,
+   "count": 1
+  },
+  {
+   "page": 2,
+   "slot": 6,
+   "itemId": 2675141124,
+   "count": 1
+  },
+  {
+   "page": 2,
+   "slot": 7,
+   "itemId": 2958403525,
+   "count": 1
+  },
+  {
+   "page": 107871,
+   "slot": 0,
+   "itemId": 2164129974,
+   "count": 1
+  },
+  {
+   "page": 107871,
+   "slot": 1,
+   "itemId": 173909852,
+   "count": 1
+  },
+  {
+   "page": 107871,
+   "slot": 2,
+   "itemId": 1652235601,
+   "count": 1
+  },
+  {
+   "page": 107871,
+   "slot": 3,
+   "itemId": 965966202,
+   "count": 1
+  },
+  {
+   "page": 107871,
+   "slot": 4,
+   "itemId": 284749629,
+   "count": 1
+  },
+  {
+   "page": 107871,
+   "slot": 5,
+   "itemId": 1789305300,
+   "count": 1
+  },
+  {
+   "page": 107871,
+   "slot": 6,
+   "itemId": 1397467393,
+   "count": 1
+  },
+  {
+   "page": 107871,
+   "slot": 7,
+   "itemId": 3728213390,
+   "count": 1
+  },
+  {
+   "page": 107880,
+   "slot": 1,
+   "itemId": 1101501148,
+   "count": 346
+  },
+  {
+   "page": 107882,
+   "slot": 0,
+   "itemId": 571871007,
+   "count": 1
+  },
+  {
+   "page": 107882,
+   "slot": 1,
+   "itemId": 1782997504,
+   "count": 3
+  },
+  {
+   "page": 107882,
+   "slot": 2,
+   "itemId": 2711958397,
+   "count": 1
+  },
+  {
+   "page": 107882,
+   "slot": 3,
+   "itemId": 256634933,
+   "count": 1
+  },
+  {
+   "page": 107882,
+   "slot": 4,
+   "itemId": 2897843384,
+   "count": 4
+  },
+  {
+   "page": 107882,
+   "slot": 5,
+   "itemId": 3566462451,
+   "count": 1
+  },
+  {
+   "page": 107882,
+   "slot": 6,
+   "itemId": 3566462451,
+   "count": 1
+  },
+  {
+   "page": 107882,
+   "slot": 7,
+   "itemId": 2811112772,
+   "count": 1
+  },
+  {
+   "page": 107883,
+   "slot": 0,
+   "itemId": 3656080316,
+   "count": 7
+  },
+  {
+   "page": 107883,
+   "slot": 1,
+   "itemId": 2824141465,
+   "count": 7
+  },
+  {
+   "page": 107883,
+   "slot": 2,
+   "itemId": 3833797336,
+   "count": 1
+  },
+  {
+   "page": 107883,
+   "slot": 3,
+   "itemId": 3168936309,
+   "count": 1
+  },
+  {
+   "page": 107883,
+   "slot": 4,
+   "itemId": 1539486909,
+   "count": 2
+  },
+  {
+   "page": 107883,
+   "slot": 5,
+   "itemId": 3441701492,
+   "count": 4
+  }
+ ],
+ "items": {
+  "2090825266": {
+   "internalName": "Food_T1_processed_meat_Grilled_LeanMeat",
+   "category": "Consumables",
+   "maxStack": 20
+  },
+  "2840500800": {
+   "internalName": "Food_T1_dish_grain_CorncobSkewer",
+   "category": "Consumables",
+   "maxStack": 20
+  },
+  "3286272712": {
+   "internalName": "Food_T1_dish_mushroom_MushroomSkewer",
+   "category": "Consumables",
+   "maxStack": 20
+  },
+  "1326647808": {
+   "internalName": "Craftingstation_Campfire",
+   "category": "BuildTools",
+   "maxStack": 5
+  },
+  "4167058878": {
+   "internalName": "Animal_Pet_Cat_02_Striped",
+   "category": "BuildTools",
+   "maxStack": 1
+  },
+  "957162158": {
+   "internalName": "Material_T2_Bug_Dust",
+   "category": "Materials",
+   "maxStack": 250
+  },
+  "1212327967": {
+   "internalName": "Material_T1_SpiderGland",
+   "category": "Materials",
+   "maxStack": 250
+  },
+  "1451410091": {
+   "internalName": "Material_T1_Wax",
+   "category": "Materials",
+   "maxStack": 250
+  },
+  "1503622318": {
+   "internalName": "Material_T2_Poison_Sack",
+   "category": "Materials",
+   "maxStack": 250
+  },
+  "1549788273": {
+   "internalName": "Material_T1_Toxic_Goo",
+   "category": "Materials",
+   "maxStack": 250
+  },
+  "1830151622": {
+   "internalName": "Material_T2_Glow_Dust",
+   "category": "Materials",
+   "maxStack": 250
+  },
+  "1862351329": {
+   "internalName": "Material_T2_Amber",
+   "category": "Materials",
+   "maxStack": 250
+  },
+  "2371777842": {
+   "internalName": "Material_T3_Alchemical_Base",
+   "category": "Materials",
+   "maxStack": 250
+  },
+  "3403995938": {
+   "internalName": "Material_T2_Goo",
+   "category": "Materials",
+   "maxStack": 250
+  },
+  "3838906683": {
+   "internalName": "Material_T3_Feather",
+   "category": "Materials",
+   "maxStack": 250
+  },
+  "4109728689": {
+   "internalName": "Material_T1_Resin",
+   "category": "Materials",
+   "maxStack": 250
+  },
+  "1461371688": {
+   "internalName": "Prop_Component_T2_Sawblades",
+   "category": "Materials",
+   "maxStack": 50
+  },
+  "1536371128": {
+   "internalName": "Material_T1_Flame_Essence_Spark",
+   "category": "Materials",
+   "maxStack": 250
+  },
+  "1175242603": {
+   "internalName": "Material_T2_Cat_Feeding",
+   "category": "AnimalFood",
+   "maxStack": 200
+  },
+  "1522120746": {
+   "internalName": "Material_T2_Dog_Feeding",
+   "category": "AnimalFood",
+   "maxStack": 200
+  },
+  "786589544": {
+   "internalName": "Food_T2_Cat_Bait",
+   "category": "AnimalFood",
+   "maxStack": 50
+  },
+  "3047029804": {
+   "internalName": "Food_T2_Dog_Bait",
+   "category": "AnimalFood",
+   "maxStack": 50
+  },
+  "2302389683": {
+   "internalName": "Material_T3_CorrosiveBlood",
+   "category": "Materials",
+   "maxStack": 250
+  },
+  "2341333485": {
+   "internalName": "Material_T3_Night_AurumLily",
+   "category": "Materials",
+   "maxStack": 250
+  },
+  "3749540900": {
+   "internalName": "Material_T3_Ore_Tin",
+   "category": "Materials",
+   "maxStack": 250
+  },
+  "649108902": {
+   "internalName": "Material_T3_Antiseptic",
+   "category": "Materials",
+   "maxStack": 250
+  },
+  "425570534": {
+   "internalName": "Tool_T1_FishingRod_basic",
+   "category": "FishingRod",
+   "maxStack": 1
+  },
+  "2342031255": {
+   "internalName": "Material_T3_SteppesGrasshopper_FishingBait",
+   "category": "Ammunition",
+   "maxStack": 250
+  },
+  "1014899877": {
+   "internalName": "Material_T1_Fire_Fly_FishingBait",
+   "category": "Ammunition",
+   "maxStack": 250
+  },
+  "2201448182": {
+   "internalName": "Material_T2_Moth_FishingBait",
+   "category": "Ammunition",
+   "maxStack": 250
+  },
+  "227143323": {
+   "internalName": "Food_T1_raw_sweets_Honey",
+   "category": "Consumables",
+   "maxStack": 20
+  },
+  "443792978": {
+   "internalName": "Food_T5_raw_hydration_MountaingoatMilk",
+   "category": "Consumables",
+   "maxStack": 100
+  },
+  "1896276940": {
+   "internalName": "Food_T3_raw_egg_BirdEggs",
+   "category": "Consumables",
+   "maxStack": 20
+  },
+  "1511796527": {
+   "internalName": "Food_T1_processed_mushroom_Grilled_Mushroom_brown",
+   "category": "Consumables",
+   "maxStack": 20
+  },
+  "2824141465": {
+   "internalName": "Food_T1_processed_fruit_Dried_RedBerry",
+   "category": "Consumables",
+   "maxStack": 20
+  },
+  "3173308572": {
+   "internalName": "Food_T2_raw_nightplant_NightBerry",
+   "category": "Consumables",
+   "maxStack": 250
+  },
+  "169532188": {
+   "internalName": "Material_T3_Flour",
+   "category": "Materials",
+   "maxStack": 250
+  },
+  "2053375978": {
+   "internalName": "Material_T1_Bones",
+   "category": "Materials",
+   "maxStack": 250
+  },
+  "2617088387": {
+   "internalName": "Material_T1-T2_Green_Essence",
+   "category": "Materials",
+   "maxStack": 500
+  },
+  "2982735558": {
+   "internalName": "Material_T1_Bonemeal",
+   "category": "Materials",
+   "maxStack": 250
+  },
+  "2956062198": {
+   "internalName": "Material_T2_Giant_Bones",
+   "category": "Materials",
+   "maxStack": 250
+  },
+  "3073226096": {
+   "internalName": "Material_T3_Fossilized_Bone_Dust",
+   "category": "Materials",
+   "maxStack": 250
+  },
+  "3095665634": {
+   "internalName": "Material_T3_Fossilized_Bone",
+   "category": "Materials",
+   "maxStack": 250
+  },
+  "419344916": {
+   "internalName": "Material_T1_String",
+   "category": "Materials",
+   "maxStack": 250
+  },
+  "661026568": {
+   "internalName": "Material_T1_Animal_Fur_Patch",
+   "category": "Materials",
+   "maxStack": 250
+  },
+  "984234407": {
+   "internalName": "Material_T1_Animal_Fur",
+   "category": "Materials",
+   "maxStack": 250
+  },
+  "1496290527": {
+   "internalName": "Material_T1_Torn_Cloth",
+   "category": "Materials",
+   "maxStack": 250
+  },
+  "1564406835": {
+   "internalName": "Material_T1_Salt",
+   "category": "Materials",
+   "maxStack": 250
+  },
+  "1815424180": {
+   "internalName": "Material_T2_Linen",
+   "category": "Materials",
+   "maxStack": 250
+  },
+  "2845598712": {
+   "internalName": "Material_T2_Reptile_Hide",
+   "category": "Materials",
+   "maxStack": 250
+  },
+  "3420500473": {
+   "internalName": "Material_T1_Dried_Fur",
+   "category": "Materials",
+   "maxStack": 250
+  },
+  "4135223598": {
+   "internalName": "Material_T3_Leather",
+   "category": "Materials",
+   "maxStack": 250
+  },
+  "196827131": {
+   "internalName": "Block_Roof_T2_Loam_FiredShingle_CRAFTING",
+   "category": "BuildTools",
+   "maxStack": 5000
+  },
+  "1176719610": {
+   "internalName": "Block_T1_Bones_REWARD",
+   "category": "BuildTools",
+   "maxStack": 5000
+  },
+  "1406367026": {
+   "internalName": "Block_T2_Dungeon_Stone_Catacombs_REWARD",
+   "category": "BuildTools",
+   "maxStack": 5000
+  },
+  "1699388154": {
+   "internalName": "Block_Roof_T1_StoneShingles_CRAFTING",
+   "category": "BuildTools",
+   "maxStack": 5000
+  },
+  "2041116756": {
+   "internalName": "Block_T1_HollowHalls_Stone_HallowHalls_REWARD",
+   "category": "BuildTools",
+   "maxStack": 5000
+  },
+  "2175686957": {
+   "internalName": "Block_T1_Stone_Rough_CRAFTING",
+   "category": "BuildTools",
+   "maxStack": 5000
+  },
+  "2871749713": {
+   "internalName": "Block_T2_Wood_Timberframe_REWARD",
+   "category": "BuildTools",
+   "maxStack": 5000
+  },
+  "447697249": {
+   "internalName": "Build_TerrainMaterial_T1_Road_Dirt_1",
+   "category": "Materials",
+   "maxStack": 250
+  },
+  "459345780": {
+   "internalName": "Build_TerrainMaterial_T2_Deepforest_fertile_Highgrass",
+   "category": "Materials",
+   "maxStack": 1000
+  },
+  "760251531": {
+   "internalName": "Build_TerrainMaterial_T2_Stone_Talltree",
+   "category": "Materials",
+   "maxStack": 1000
+  },
+  "1181280513": {
+   "internalName": "Build_TerrainMaterial_T2_Stone_DeepForest",
+   "category": "Materials",
+   "maxStack": 1000
+  },
+  "1257792166": {
+   "internalName": "Build_TerrainMaterial_T1_Rubble",
+   "category": "Materials",
+   "maxStack": 1000
+  },
+  "1558115984": {
+   "internalName": "Build_TerrainMaterial_T1_Dirt_Grassland",
+   "category": "Materials",
+   "maxStack": 1000
+  },
+  "2179075323": {
+   "internalName": "Material_T1_FogTerrain_ActiveMycelium",
+   "category": "Materials",
+   "maxStack": 250
+  },
+  "2385754716": {
+   "internalName": "Build_TerrainMaterial_T2_Dirt_Talltrees",
+   "category": "Materials",
+   "maxStack": 1000
+  },
+  "2517406505": {
+   "internalName": "Build_TerrainMaterial_T1_Grassland_fertile_Highgrass",
+   "category": "Materials",
+   "maxStack": 1000
+  },
+  "2541805223": {
+   "internalName": "Build_TerrainMaterial_T5_Snow",
+   "category": "Materials",
+   "maxStack": 1000
+  },
+  "2732808327": {
+   "internalName": "Build_TerrainMaterial_T3_Dirt_Steppes",
+   "category": "Materials",
+   "maxStack": 1000
+  },
+  "2992740264": {
+   "internalName": "Build_TerrainMaterial_T1_FieldStoneWall",
+   "category": "Materials",
+   "maxStack": 500
+  },
+  "3152907053": {
+   "internalName": "Build_TerrainMaterial_T1_GlowDirt_Blue_ActiveMycelium",
+   "category": "Materials",
+   "maxStack": 250
+  },
+  "3604850591": {
+   "internalName": "Build_TerrainMaterial_T1_Farmsoil_Flowerbed",
+   "category": "Materials",
+   "maxStack": 250
+  },
+  "3937186197": {
+   "internalName": "Build_TerrainMaterial_T2_Dirt_DeepForest",
+   "category": "Materials",
+   "maxStack": 1000
+  },
+  "4229884102": {
+   "internalName": "Material_T2_MushroomDrop_ShroudMush",
+   "category": "Materials",
+   "maxStack": 250
+  },
+  "3445636557": {
+   "internalName": "Build_TerrainMaterial_T3_Stone_Steppes_Limestone",
+   "category": "Materials",
+   "maxStack": 1000
+  },
+  "860644516": {
+   "internalName": "Material_T1_MushroomDrop_ShroudLiquid",
+   "category": "Materials",
+   "maxStack": 250
+  },
+  "1320899587": {
+   "internalName": "Material_T1_Wood_Logs_Dead",
+   "category": "Materials",
+   "maxStack": 250
+  },
+  "1728169696": {
+   "internalName": "Material_T2_Fog_Sack",
+   "category": "Materials",
+   "maxStack": 250
+  },
+  "2559861108": {
+   "internalName": "Material_T1_Fog_Essence01_ShroudSpores",
+   "category": "Materials",
+   "maxStack": 250
+  },
+  "3509012331": {
+   "internalName": "Material_T1_FogTerrain_Mycelium",
+   "category": "Materials",
+   "maxStack": 250
+  },
+  "1284326318": {
+   "internalName": "Material_T2_BrittleShroudPetals",
+   "category": "Materials",
+   "maxStack": 250
+  },
+  "2832562682": {
+   "internalName": "Material_T1_AeratedShroudGel",
+   "category": "Materials",
+   "maxStack": 250
+  },
+  "3405461465": {
+   "internalName": "Material_T2_CorruptedBoarTusk",
+   "category": "Materials",
+   "maxStack": 250
+  },
+  "3622683972": {
+   "internalName": "Material_T3_Fog_Essence02_ShroudFragment",
+   "category": "Materials",
+   "maxStack": 250
+  },
+  "4090772336": {
+   "internalName": "Material_T1_Shroud_Medicine",
+   "category": "Materials",
+   "maxStack": 250
+  },
+  "1528590138": {
+   "internalName": "Material_T1_Fog_Core01_ShroudCore",
+   "category": "Materials",
+   "maxStack": 250
+  },
+  "722268629": {
+   "internalName": "Material_T1_Wood_Logs",
+   "category": "Materials",
+   "maxStack": 250
+  },
+  "1626290897": {
+   "internalName": "Material_T2_Wood_Planks",
+   "category": "Materials",
+   "maxStack": 250
+  },
+  "1635234852": {
+   "internalName": "Material_T1_Wood_Acid",
+   "category": "Materials",
+   "maxStack": 250
+  },
+  "1765656585": {
+   "internalName": "Material_T2_Wood_Hardwood",
+   "category": "Materials",
+   "maxStack": 250
+  },
+  "3921293392": {
+   "internalName": "Material_T3_Straw",
+   "category": "Materials",
+   "maxStack": 250
+  },
+  "1492892444": {
+   "internalName": "Food_T1_raw_bad_meat_LeanMeat",
+   "category": "Consumables",
+   "maxStack": 20
+  },
+  "2512460235": {
+   "internalName": "Food_T2_raw_bad_meat_Game",
+   "category": "Consumables",
+   "maxStack": 20
+  },
+  "2968802610": {
+   "internalName": "Food_T1_raw_bad_meat_WolfMeat",
+   "category": "Consumables",
+   "maxStack": 20
+  },
+  "385885887": {
+   "internalName": "Food_T3_raw_bad_meat_Bird",
+   "category": "Consumables",
+   "maxStack": 20
+  },
+  "132545371": {
+   "internalName": "Material_T1_Metal_Scraps",
+   "category": "Materials",
+   "maxStack": 250
+  },
+  "170689373": {
+   "internalName": "Material_T2_Copper_Bar",
+   "category": "Materials",
+   "maxStack": 250
+  },
+  "372029138": {
+   "internalName": "Material_T1_Charcoal",
+   "category": "Materials",
+   "maxStack": 250
+  },
+  "631520303": {
+   "internalName": "Build_TerrainMaterial_T1_Stone",
+   "category": "Materials",
+   "maxStack": 1000
+  },
+  "731732847": {
+   "internalName": "Material_T2_Ore_Copper",
+   "category": "Materials",
+   "maxStack": 250
+  },
+  "1261933427": {
+   "internalName": "Material_T2_Fired_Brick",
+   "category": "Materials",
+   "maxStack": 250
+  },
+  "1586398842": {
+   "internalName": "Material_T1_Stone_Flint",
+   "category": "Materials",
+   "maxStack": 1000
+  },
+  "1714627847": {
+   "internalName": "Material_T1_Tar",
+   "category": "Materials",
+   "maxStack": 250
+  },
+  "1925006089": {
+   "internalName": "Material_T2_Clay",
+   "category": "Materials",
+   "maxStack": 250
+  },
+  "2530601241": {
+   "internalName": "Material_T1_Red_Marble_Fragment",
+   "category": "Materials",
+   "maxStack": 500
+  },
+  "2743545700": {
+   "internalName": "Material_T1_Nails",
+   "category": "Materials",
+   "maxStack": 250
+  },
+  "4230023681": {
+   "internalName": "Material_T1_Coal_Powder",
+   "category": "Materials",
+   "maxStack": 250
+  },
+  "4271896226": {
+   "internalName": "Material_T1_Metal_Sheets",
+   "category": "Materials",
+   "maxStack": 250
+  },
+  "642002617": {
+   "internalName": "Material_T3_Bronze_Bar",
+   "category": "Materials",
+   "maxStack": 250
+  },
+  "1072522988": {
+   "internalName": "Material_T3_Tin_Bars",
+   "category": "Materials",
+   "maxStack": 250
+  },
+  "3264892278": {
+   "internalName": "Material_T1_CritterParts",
+   "category": "Materials",
+   "maxStack": 250
+  },
+  "3571891401": {
+   "internalName": "Material_T2_GiantCritterScales",
+   "category": "Materials",
+   "maxStack": 250
+  },
+  "2710616938": {
+   "internalName": "Material_TX_Trophy_Fell_Heavy_head",
+   "category": "Materials",
+   "maxStack": 50
+  },
+  "800792662": {
+   "internalName": "_Material_TX_Trophy_Fell_Heavy_Berserker_head",
+   "category": "Materials",
+   "maxStack": 50
+  },
+  "1285378490": {
+   "internalName": "_Material_TX_Trophy_Wolf_Heavy_head",
+   "category": "Materials",
+   "maxStack": 50
+  },
+  "1353828797": {
+   "internalName": "_Material_TX_Trophy_Fell_Critter_Queen_head",
+   "category": "Materials",
+   "maxStack": 50
+  },
+  "1368893472": {
+   "internalName": "Material_TX_Trophy_Skeleton_Heavy_head",
+   "category": "Materials",
+   "maxStack": 50
+  },
+  "2339068671": {
+   "internalName": "Material_TX_Trophy_Vukah_head",
+   "category": "Materials",
+   "maxStack": 50
+  },
+  "3574383404": {
+   "internalName": "Material_TX_Trophy_Scavenger_mage_head",
+   "category": "Materials",
+   "maxStack": 50
+  },
+  "1693311429": {
+   "internalName": "Material_T3_CritterParts_CritterGlands",
+   "category": "Materials",
+   "maxStack": 250
+  },
+  "2610555646": {
+   "internalName": "Material_T1_OldBooks",
+   "category": "Materials",
+   "maxStack": 250
+  },
+  "2572858337": {
+   "internalName": "Build_TerrainMaterial_T6_Wetlands_Gold_Coins",
+   "category": "Materials",
+   "maxStack": 1000
+  },
+  "1798662696": {
+   "internalName": "Material_T1_Twigs",
+   "category": "Materials",
+   "maxStack": 250
+  },
+  "1323406480": {
+   "internalName": "Material_T2_Fognest_Ressource",
+   "category": "Materials",
+   "maxStack": 500
+  },
+  "1782638906": {
+   "internalName": "Material_T1_Fognest_Ressource",
+   "category": "Materials",
+   "maxStack": 500
+  },
+  "1378756449": {
+   "internalName": "T2_Gem_GemOfSwiftness",
+   "category": "WeaponGem",
+   "maxStack": 1
+  },
+  "3316218728": {
+   "internalName": "Material_T1_Plant_Fibre",
+   "category": "Materials",
+   "maxStack": 250
+  },
+  "1533027547": {
+   "internalName": "T2_Seedling_Material_Indigo",
+   "category": "BuildTools",
+   "maxStack": 100
+  },
+  "4276529065": {
+   "internalName": "Material_T2_Indigo_Plant",
+   "category": "Materials",
+   "maxStack": 250
+  },
+  "1026141130": {
+   "internalName": "Material_T6_PaperReed",
+   "category": "Materials",
+   "maxStack": 250
+  },
+  "2229826461": {
+   "internalName": "_T1_Seedling_Bush_Reed",
+   "category": "BuildTools",
+   "maxStack": 100
+  },
+  "1628543982": {
+   "internalName": "Material_T3_Rooibos",
+   "category": "Materials",
+   "maxStack": 250
+  },
+  "2721454042": {
+   "internalName": "T2_Seedling_Vegetable_Beets",
+   "category": "BuildTools",
+   "maxStack": 100
+  },
+  "1304815894": {
+   "internalName": "Food_T2_raw_bad_mushroom_AzureRussula",
+   "category": "Consumables",
+   "maxStack": 20
+  },
+  "3542827745": {
+   "internalName": "Food_T2_raw_vegetable_ForestBeet",
+   "category": "Consumables",
+   "maxStack": 20
+  },
+  "4180130855": {
+   "internalName": "Food_T1_raw_herb_StJohnsWort",
+   "category": "Consumables",
+   "maxStack": 100
+  },
+  "4094316095": {
+   "internalName": "Food_T3_raw_vegetable_RedPepper",
+   "category": "Consumables",
+   "maxStack": 20
+  },
+  "764289975": {
+   "internalName": "Material_T4_Aloe",
+   "category": "Materials",
+   "maxStack": 250
+  },
+  "1438935166": {
+   "internalName": "T1_Seedling_Vegetable_Tomato",
+   "category": "BuildTools",
+   "maxStack": 100
+  },
+  "4181548098": {
+   "internalName": "T2_Seedling_Fruit_Strawberry",
+   "category": "BuildTools",
+   "maxStack": 100
+  },
+  "3479563223": {
+   "internalName": "Food_T2_raw_fruit_Strawberry",
+   "category": "Consumables",
+   "maxStack": 20
+  },
+  "1036540037": {
+   "internalName": "Food_T1_raw_vegetable_Tomato",
+   "category": "Consumables",
+   "maxStack": 20
+  },
+  "2456844314": {
+   "internalName": "Food_T3_raw_sweets_SugarCane",
+   "category": "Consumables",
+   "maxStack": 20
+  },
+  "3660770821": {
+   "internalName": "T1_Seedling_Grain_Corn",
+   "category": "BuildTools",
+   "maxStack": 100
+  },
+  "3118804138": {
+   "internalName": "Food_T1_raw_grain_Corncob",
+   "category": "Consumables",
+   "maxStack": 20
+  },
+  "842838716": {
+   "internalName": "_T1_Seedling_Bush_Cattail",
+   "category": "BuildTools",
+   "maxStack": 100
+  },
+  "2435149273": {
+   "internalName": "Material_T3_Wheat_Grains",
+   "category": "Materials",
+   "maxStack": 250
+  },
+  "2290894589": {
+   "internalName": "Food_T2_raw_herb_StingingNettle",
+   "category": "Consumables",
+   "maxStack": 100
+  },
+  "34487402": {
+   "internalName": "T2_Seedling_Material_Flax",
+   "category": "BuildTools",
+   "maxStack": 100
+  },
+  "3898847112": {
+   "internalName": "Material_T2_Flax",
+   "category": "Materials",
+   "maxStack": 250
+  },
+  "751481953": {
+   "internalName": "T1_Seedling_Mushroom_brown",
+   "category": "BuildTools",
+   "maxStack": 100
+  },
+  "1174705547": {
+   "internalName": "T1_Seedling_Fruit_BerryBushes",
+   "category": "BuildTools",
+   "maxStack": 100
+  },
+  "600862405": {
+   "internalName": "Food_T1_raw_mushroom_Mushroom_brown",
+   "category": "Consumables",
+   "maxStack": 20
+  },
+  "3707271437": {
+   "internalName": "Food_T1_raw_fruit_Red_Berries",
+   "category": "Consumables",
+   "maxStack": 20
+  },
+  "1823674426": {
+   "internalName": "Build_TerrainMaterial_T1_Farmsoil",
+   "category": "Materials",
+   "maxStack": 250
+  },
+  "3360608010": {
+   "internalName": "Food_T2_raw_grain_Hazelnut",
+   "category": "Consumables",
+   "maxStack": 20
+  },
+  "2666875137": {
+   "internalName": "T2_Seedling_Material_Hazelnuts",
+   "category": "BuildTools",
+   "maxStack": 100
+  },
+  "2155262535": {
+   "internalName": "Weapon_T1_2H_GreatSword_01",
+   "category": "Weapons",
+   "maxStack": 1
+  },
+  "2574399380": {
+   "internalName": "Weapon_T1_2H_GreatSwordEpic_01",
+   "category": "Weapons",
+   "maxStack": 1
+  },
+  "3960008381": {
+   "internalName": "Weapon_T1_2H_GreatSwordEpic_02",
+   "category": "Weapons",
+   "maxStack": 1
+  },
+  "2671932055": {
+   "internalName": "Weapon_T2_2H_GreatSwordEpic_02",
+   "category": "Weapons",
+   "maxStack": 1
+  },
+  "3855021353": {
+   "internalName": "Weapon_T2_2H_GreatSword_02",
+   "category": "Weapons",
+   "maxStack": 1
+  },
+  "2585181438": {
+   "internalName": "Armor_T2_Warrior_Rogue_Helmet_Loot",
+   "category": "Equipment",
+   "maxStack": 1
+  },
+  "3359562849": {
+   "internalName": "Armor_T2_Warrior_DPS_Helmet_Loot",
+   "category": "Equipment",
+   "maxStack": 1
+  },
+  "4153283154": {
+   "internalName": "Armor_T2_Mage_BattleWand_Helmet_Loot",
+   "category": "Equipment",
+   "maxStack": 1
+  },
+  "2987600300": {
+   "internalName": "Armor_T3_Warrior_Rogue_Helmet_Loot",
+   "category": "Equipment",
+   "maxStack": 1
+  },
+  "1676088364": {
+   "internalName": "Weapon_T2_1H_MaceEpic_01",
+   "category": "Weapons",
+   "maxStack": 1
+  },
+  "2646707458": {
+   "internalName": "Weapon_TX_1H_Mace_HollowHall",
+   "category": "Weapons",
+   "maxStack": 1
+  },
+  "4110381914": {
+   "internalName": "Weapon_T1_1H_MaceEpic_01",
+   "category": "Weapons",
+   "maxStack": 1
+  },
+  "1474722178": {
+   "internalName": "Weapon_T1-TX_1H_Mace_Enemy_Fogger_Soldier",
+   "category": "Weapons",
+   "maxStack": 1
+  },
+  "3205048904": {
+   "internalName": "Weapon_T1_1H_AxeEpic_01",
+   "category": "Weapons",
+   "maxStack": 1
+  },
+  "1094447119": {
+   "internalName": "Weapon_T1_1H_Axe_01",
+   "category": "Weapons",
+   "maxStack": 1
+  },
+  "3026017602": {
+   "internalName": "Weapon_T1-TX_1H_Axe_Enemy_Scavenger",
+   "category": "Weapons",
+   "maxStack": 1
+  },
+  "2396593895": {
+   "internalName": "Weapon_T1_1H_Lore_Axe_Ministory_10",
+   "category": "Weapons",
+   "maxStack": 1
+  },
+  "1157288032": {
+   "internalName": "Weapon_T1_2H_Staff_01",
+   "category": "Weapons",
+   "maxStack": 1
+  },
+  "2515033100": {
+   "internalName": "Weapon_T1_2H_StaffEpic_02",
+   "category": "Weapons",
+   "maxStack": 1
+  },
+  "3371766557": {
+   "internalName": "Weapon_T1_2H_StaffEpic_01",
+   "category": "Weapons",
+   "maxStack": 1
+  },
+  "1255239784": {
+   "internalName": "Weapon_T2_2H_StaffEpic_01",
+   "category": "Weapons",
+   "maxStack": 1
+  },
+  "1404050036": {
+   "internalName": "Weapon_TX_2H_Staff_FogNest",
+   "category": "Weapons",
+   "maxStack": 1
+  },
+  "3650841772": {
+   "internalName": "Weapon_TX_2H_Staff_HollowHall",
+   "category": "Weapons",
+   "maxStack": 1
+  },
+  "147615610": {
+   "internalName": "Ammo_T2_Spell_Bone_Channel_lvl15",
+   "category": "Ammunition",
+   "maxStack": 500
+  },
+  "471823515": {
+   "internalName": "Ammo_T3_Spell_Acid_Cone_lvl17",
+   "category": "Ammunition",
+   "maxStack": 500
+  },
+  "738997972": {
+   "internalName": "Ammo_T3_Spell_Fire_Lightburst_lvl17",
+   "category": "Ammunition",
+   "maxStack": 500
+  },
+  "875842012": {
+   "internalName": "Ammo_T1_Spell_Fire_Bolt_lvl5",
+   "category": "Ammunition",
+   "maxStack": 500
+  },
+  "901722888": {
+   "internalName": "Ammo_T2_Spell_Fire_Pillar_lvl12",
+   "category": "Ammunition",
+   "maxStack": 500
+  },
+  "1048548069": {
+   "internalName": "Ammo_T2_Spell_Lightning_Chain_lvl12",
+   "category": "Ammunition",
+   "maxStack": 500
+  },
+  "1790474262": {
+   "internalName": "Ammo_T2_Spell_Fire_Bolt_lvl12",
+   "category": "Ammunition",
+   "maxStack": 500
+  },
+  "1833734179": {
+   "internalName": "Ammo_T2_Spell_Fire_Ball_lvl15",
+   "category": "Ammunition",
+   "maxStack": 500
+  },
+  "1843940779": {
+   "internalName": "Ammo_T1_Spell_Root_lvl5",
+   "category": "Ammunition",
+   "maxStack": 500
+  },
+  "1899806950": {
+   "internalName": "Ammo_T1_Spell_Heal_Channel_lvl5",
+   "category": "Ammunition",
+   "maxStack": 500
+  },
+  "2728050036": {
+   "internalName": "Ammo_T2_Spell_Ice_Bolt_lvl12",
+   "category": "Ammunition",
+   "maxStack": 500
+  },
+  "3169292847": {
+   "internalName": "Ammo_T1_Spell_Ice_Bolt_lvl5",
+   "category": "Ammunition",
+   "maxStack": 500
+  },
+  "3878494540": {
+   "internalName": "Ammo_T2_Spell_Heal_Chain_lvl12",
+   "category": "Ammunition",
+   "maxStack": 500
+  },
+  "3918049792": {
+   "internalName": "Ammo_T1_Spell_Fire_Ball_lvl10",
+   "category": "Ammunition",
+   "maxStack": 500
+  },
+  "3486546660": {
+   "internalName": "Weapon_T1_2H_GreatAxeEpic_01",
+   "category": "Weapons",
+   "maxStack": 1
+  },
+  "101298280": {
+   "internalName": "Weapon_T2_2H_GreatAxeEpic_01",
+   "category": "Weapons",
+   "maxStack": 1
+  },
+  "3304320872": {
+   "internalName": "Weapon_T1_2H_GreatAxe_01",
+   "category": "Weapons",
+   "maxStack": 1
+  },
+  "3056420264": {
+   "internalName": "Weapon_T1_2H_DaggersEpic_Parry",
+   "category": "Weapons",
+   "maxStack": 1
+  },
+  "301510235": {
+   "internalName": "Weapon_T1_2H_Daggers_02_Parry",
+   "category": "Weapons",
+   "maxStack": 1
+  },
+  "803635338": {
+   "internalName": "Weapon_T1_2H_Daggers_01_DPS",
+   "category": "Weapons",
+   "maxStack": 1
+  },
+  "392894300": {
+   "internalName": "Weapon_T1_2H_DaggersEpic_DPS",
+   "category": "Weapons",
+   "maxStack": 1
+  },
+  "1008092854": {
+   "internalName": "Weapon_T2_2H_DaggersEpic_Poison",
+   "category": "Weapons",
+   "maxStack": 1
+  },
+  "2395034423": {
+   "internalName": "Tool_T1_WateringCan",
+   "category": "BuildTools",
+   "maxStack": 1
+  },
+  "1240116813": {
+   "internalName": "NPC_Townsfolk_Female_Villager_02_MarianneReed",
+   "category": "BuildTools",
+   "maxStack": 1
+  },
+  "83248261": {
+   "internalName": "Consumable_Potion_Mana_T1_T2",
+   "category": "Consumables",
+   "maxStack": 20
+  },
+  "1782997504": {
+   "internalName": "Consumable_Potion_Flask_Fog_Survival_Flask_T1",
+   "category": "Consumables",
+   "maxStack": 20
+  },
+  "2949322768": {
+   "internalName": "_Consumable_Potion_Health_T1_HoT",
+   "category": "Consumables",
+   "maxStack": 20
+  },
+  "3436474234": {
+   "internalName": "Consumable_Potion_Health_T1",
+   "category": "Consumables",
+   "maxStack": 20
+  },
+  "3441701492": {
+   "internalName": "Consumable_Potion_Antidote_Poison_T2",
+   "category": "Consumables",
+   "maxStack": 20
+  },
+  "4223175738": {
+   "internalName": "_Consumable_Potion_Mana_T2_MoT",
+   "category": "Consumables",
+   "maxStack": 20
+  },
+  "209497692": {
+   "internalName": "Consumable_Potion_Flask_Fog_Survival_Flask_T3",
+   "category": "Consumables",
+   "maxStack": 20
+  },
+  "1509402971": {
+   "internalName": "_Consumable_Potion_Health_T2_T3_HoT",
+   "category": "Consumables",
+   "maxStack": 20
+  },
+  "2206945282": {
+   "internalName": "Consumable_Potion_Flask_Fog_Elixir",
+   "category": "Consumables",
+   "maxStack": 20
+  },
+  "2635793540": {
+   "internalName": "Consumable_Potion_Flask_Of_The_Fallen",
+   "category": "Consumables",
+   "maxStack": 20
+  },
+  "3102924359": {
+   "internalName": "Consumable_Potion_Health_T2_T3",
+   "category": "Consumables",
+   "maxStack": 20
+  },
+  "386738695": {
+   "internalName": "Consumable_Potion_Lotion_T2_Ice_Protection",
+   "category": "Consumables",
+   "maxStack": 20
+  },
+  "2239380894": {
+   "internalName": "Consumable_Potion_Flask_Wisp_Of_Light",
+   "category": "Consumables",
+   "maxStack": 20
+  },
+  "1111770772": {
+   "internalName": "Weapon_T1_1H_Wand_02_Ice",
+   "category": "Weapons",
+   "maxStack": 1
+  },
+  "1595482967": {
+   "internalName": "Weapon_T2_1H_WandEpic_02_Ice",
+   "category": "Weapons",
+   "maxStack": 1
+  },
+  "1693828837": {
+   "internalName": "Weapon_T1_1H_Wand_01_Fire",
+   "category": "Weapons",
+   "maxStack": 1
+  },
+  "1792316220": {
+   "internalName": "Weapon_T2_1H_WandEpic_01_Fire",
+   "category": "Weapons",
+   "maxStack": 1
+  },
+  "3419190942": {
+   "internalName": "Weapon_T1_1H_WandEpic_02_Ice",
+   "category": "Weapons",
+   "maxStack": 1
+  },
+  "3566462451": {
+   "internalName": "Weapon_T2_1H_Wand_01_Fire",
+   "category": "Weapons",
+   "maxStack": 1
+  },
+  "571871007": {
+   "internalName": "Weapon_TX_1H_Wand_HollowHall_Blunt",
+   "category": "Weapons",
+   "maxStack": 1
+  },
+  "1276754499": {
+   "internalName": "Weapon_T1_1H_Lore_Wand_Ministory_02_Lightning",
+   "category": "Weapons",
+   "maxStack": 1
+  },
+  "1677017695": {
+   "internalName": "Armor_T1_Ranger_Archer_DPS_Boots_Loot",
+   "category": "Equipment",
+   "maxStack": 1
+  },
+  "2147223774": {
+   "internalName": "Armor_T1_Warrior_DPS_Boots_Loot",
+   "category": "Equipment",
+   "maxStack": 1
+  },
+  "3648424321": {
+   "internalName": "Armor_T1_Mage_Wizard_DPS_Boots_Loot",
+   "category": "Equipment",
+   "maxStack": 1
+  },
+  "1177540804": {
+   "internalName": "Armor_T2_Ranger_Sniper_Boots_Loot",
+   "category": "Equipment",
+   "maxStack": 1
+  },
+  "265162097": {
+   "internalName": "Armor_T2_Ranger_Archer_DPS_Boots_Loot",
+   "category": "Equipment",
+   "maxStack": 1
+  },
+  "18908173": {
+   "internalName": "Ring_T1_Ring_of_Mana",
+   "category": "Equipment",
+   "maxStack": 1
+  },
+  "857219651": {
+   "internalName": "Ring_T2_Ring_of_Stamina",
+   "category": "Equipment",
+   "maxStack": 1
+  },
+  "1376923158": {
+   "internalName": "Ring_T2_Ring_of_Mana",
+   "category": "Equipment",
+   "maxStack": 1
+  },
+  "4070275753": {
+   "internalName": "Ring_T2_Ring_of_Health",
+   "category": "Equipment",
+   "maxStack": 1
+  },
+  "4275592172": {
+   "internalName": "Ring_T2_Ring_of_The_Flame",
+   "category": "Equipment",
+   "maxStack": 1
+  },
+  "1652235601": {
+   "internalName": "Ring_T3_Ring_of_Stamina",
+   "category": "Equipment",
+   "maxStack": 1
+  },
+  "425702640": {
+   "internalName": "Ring_T3_Ring_of_Health",
+   "category": "Equipment",
+   "maxStack": 1
+  },
+  "476811263": {
+   "internalName": "Weapon_T1_2H_BowEpic_01",
+   "category": "Weapons",
+   "maxStack": 1
+  },
+  "2242220014": {
+   "internalName": "Weapon_T1_2H_BowEpic_03",
+   "category": "Weapons",
+   "maxStack": 1
+  },
+  "3540633303": {
+   "internalName": "Weapon_T1_2H_Bow_03",
+   "category": "Weapons",
+   "maxStack": 1
+  },
+  "3881967409": {
+   "internalName": "Weapon_T1_2H_Bow_01",
+   "category": "Weapons",
+   "maxStack": 1
+  },
+  "886466633": {
+   "internalName": "Weapon_TX_2H_Bow_FogNest",
+   "category": "Weapons",
+   "maxStack": 1
+  },
+  "2296172399": {
+   "internalName": "Weapon_T2_2H_BowEpic_01",
+   "category": "Weapons",
+   "maxStack": 1
+  },
+  "1247095576": {
+   "internalName": "Ammo_T2_Arrow_Bone_lvl15",
+   "category": "Ammunition",
+   "maxStack": 500
+  },
+  "1422216404": {
+   "internalName": "Ammo_T1_Arrow_Flint_lvl5",
+   "category": "Ammunition",
+   "maxStack": 500
+  },
+  "1536235498": {
+   "internalName": "Ammo_T3_Arrow_Ivory_lvl17",
+   "category": "Ammunition",
+   "maxStack": 500
+  },
+  "1729479389": {
+   "internalName": "Ammo_T1_Arrow_Scrap_lvl10",
+   "category": "Ammunition",
+   "maxStack": 500
+  },
+  "2172551026": {
+   "internalName": "Ammo_T5_Arrow_Obsidian_lvl30",
+   "category": "Ammunition",
+   "maxStack": 500
+  },
+  "2919301642": {
+   "internalName": "Ammo_T2_Arrow_Copper_Poison_lvl15",
+   "category": "Ammunition",
+   "maxStack": 500
+  },
+  "4046432840": {
+   "internalName": "Ammo_T2_Arrow_Copper_lvl12",
+   "category": "Ammunition",
+   "maxStack": 500
+  },
+  "3990911183": {
+   "internalName": "Ammo_T3_Arrow_Bronze_lvl17",
+   "category": "Ammunition",
+   "maxStack": 500
+  },
+  "551568007": {
+   "internalName": "Ammo_T3_Arrow_Bronze_Poison_lvl20",
+   "category": "Ammunition",
+   "maxStack": 500
+  },
+  "2330097805": {
+   "internalName": "Collection_fossils_05_urchins_urchin_02",
+   "category": "Collectibles",
+   "maxStack": 20
+  },
+  "2414905485": {
+   "internalName": "Collection_fossils_05_urchins_urchin_03",
+   "category": "Collectibles",
+   "maxStack": 20
+  },
+  "3773857537": {
+   "internalName": "Collection_fossils_05_urchins_urchin_01",
+   "category": "Collectibles",
+   "maxStack": 20
+  },
+  "451517866": {
+   "internalName": "Collection_fossils_02_Trilobites_trilobite_02",
+   "category": "Collectibles",
+   "maxStack": 20
+  },
+  "2845222341": {
+   "internalName": "Collection_fossils_03_Gastropods_gastropod_02",
+   "category": "Collectibles",
+   "maxStack": 20
+  },
+  "3532723599": {
+   "internalName": "Armor_T2_Mage_Wizard_DPS_Chest_Loot",
+   "category": "Equipment",
+   "maxStack": 1
+  },
+  "1033045151": {
+   "internalName": "Armor_T1_Ranger_Archer_DPS_Chest_Loot",
+   "category": "Equipment",
+   "maxStack": 1
+  },
+  "1343249024": {
+   "internalName": "Armor_T1_Mage_Wizard_DPS_Chest_Loot",
+   "category": "Equipment",
+   "maxStack": 1
+  },
+  "2675141124": {
+   "internalName": "Armor_T2_Mage_BattleWand_Chest_Loot",
+   "category": "Equipment",
+   "maxStack": 1
+  },
+  "1582871397": {
+   "internalName": "Armor_T3_Ranger_Assassin_Chest_Loot",
+   "category": "Equipment",
+   "maxStack": 1
+  },
+  "300032798": {
+   "internalName": "Shield_T1_DPS_Loot",
+   "category": "Equipment",
+   "maxStack": 1
+  },
+  "1405047893": {
+   "internalName": "Ward_T1_Loot",
+   "category": "Equipment",
+   "maxStack": 1
+  },
+  "419035885": {
+   "internalName": "Shield_T2_Tank_Loot",
+   "category": "Equipment",
+   "maxStack": 1
+  },
+  "2165424296": {
+   "internalName": "Shield_TX_Skull_HollowHall",
+   "category": "Equipment",
+   "maxStack": 1
+  },
+  "3744513726": {
+   "internalName": "Shield_T2_DPS_Loot",
+   "category": "Equipment",
+   "maxStack": 1
+  },
+  "1828068654": {
+   "internalName": "Shield_T1_Lore_ShieldEpic_carpenter_hint06",
+   "category": "Equipment",
+   "maxStack": 1
+  },
+  "4004201468": {
+   "internalName": "Shield_T2_Lore_ShieldEpic_Ministory_17",
+   "category": "Equipment",
+   "maxStack": 1
+  },
+  "3034847985": {
+   "internalName": "Weapon_T1_2H_Hammer_01",
+   "category": "Weapons",
+   "maxStack": 1
+  },
+  "4134797150": {
+   "internalName": "Weapon_TX_2H_Hammer_HollowHall",
+   "category": "Weapons",
+   "maxStack": 1
+  },
+  "4071675176": {
+   "internalName": "Weapon_TX_2H_Hammer_FogNest",
+   "category": "Weapons",
+   "maxStack": 1
+  },
+  "2897843384": {
+   "internalName": "Lockpick_Scrapy_T0-T4",
+   "category": "Tools",
+   "maxStack": 50
+  },
+  "2361121883": {
+   "internalName": "Key_Skeleton_Bone_Dungeon02",
+   "category": "Tools",
+   "maxStack": 1
+  },
+  "1539486909": {
+   "internalName": "Consumable_Bandage_T1",
+   "category": "Consumables",
+   "maxStack": 20
+  },
+  "3833797336": {
+   "internalName": "Tool_Water_Pouch_Refillable",
+   "category": "Consumables",
+   "maxStack": 1
+  },
+  "2433487720": {
+   "internalName": "Food_T1_raw_nightplant_NightLily",
+   "category": "Consumables",
+   "maxStack": 250
+  },
+  "3244772462": {
+   "internalName": "Consumable_Bandage_T3",
+   "category": "Consumables",
+   "maxStack": 20
+  },
+  "2058567631": {
+   "internalName": "Consumable_Scroll_Prayer_Of_The_Flame_Buff",
+   "category": "Consumables",
+   "maxStack": 20
+  },
+  "4044132453": {
+   "internalName": "Ammo_T3_Spell_Lightning_Totem_lvl17",
+   "category": "Ammunition",
+   "maxStack": 500
+  },
+  "2830104367": {
+   "internalName": "Ammo_T3_Spell_Fire_Totem_lvl17",
+   "category": "Ammunition",
+   "maxStack": 500
+  },
+  "632849243": {
+   "internalName": "Ammo_T3_Spell_Ice_Totem_lvl17",
+   "category": "Ammunition",
+   "maxStack": 500
+  },
+  "127804572": {
+   "internalName": "Consumable_Scroll_Fog_Meteor_Shower",
+   "category": "Consumables",
+   "maxStack": 20
+  },
+  "729180175": {
+   "internalName": "Weapon_T1_1H_Sword_01",
+   "category": "Weapons",
+   "maxStack": 1
+  },
+  "1181594089": {
+   "internalName": "Weapon_T0-TX_1H_Sword_Enemy_DepletedFogger",
+   "category": "Weapons",
+   "maxStack": 1
+  },
+  "1919278140": {
+   "internalName": "Weapon_T1_1H_Lore_SwordEpic_Ministory_09",
+   "category": "Weapons",
+   "maxStack": 1
+  },
+  "662464113": {
+   "internalName": "Weapon_T2-TX_1H_Sword_Enemy_FoggerBroadsword",
+   "category": "Weapons",
+   "maxStack": 1
+  },
+  "3238923785": {
+   "internalName": "Weapon_T2_1H_SwordEpic_01",
+   "category": "Weapons",
+   "maxStack": 1
+  },
+  "2093048225": {
+   "internalName": "Weapon_T2_1H_SwordEpic_chineseNewYear_01",
+   "category": "Weapons",
+   "maxStack": 1
+  },
+  "3794499900": {
+   "internalName": "8kLoreText_scroll_bard_song_02",
+   "category": "Collectibles",
+   "maxStack": 1
+  },
+  "773065948": {
+   "internalName": "Armor_T2_Warrior_DPS_Arms_Loot",
+   "category": "Equipment",
+   "maxStack": 1
+  },
+  "2710208454": {
+   "internalName": "Armor_T3_Warrior_Tank_Arms_Loot",
+   "category": "Equipment",
+   "maxStack": 1
+  },
+  "147255114": {
+   "internalName": "Vanity_TX_Farmer_Chest",
+   "category": "Equipment",
+   "maxStack": 1
+  },
+  "533002465": {
+   "internalName": "Vanity_TX_skeleton_armor_purple_Chest",
+   "category": "Equipment",
+   "maxStack": 1
+  },
+  "2434837386": {
+   "internalName": "Vanity_T1_Dress_Boots",
+   "category": "Equipment",
+   "maxStack": 1
+  },
+  "3123715137": {
+   "internalName": "Vanity_TX_Farmer_Helmet",
+   "category": "Equipment",
+   "maxStack": 1
+  },
+  "3170807453": {
+   "internalName": "Vanity_TX_Farmer_Legs",
+   "category": "Equipment",
+   "maxStack": 1
+  },
+  "3599207220": {
+   "internalName": "Vanity_T3_moth_Helmet",
+   "category": "Equipment",
+   "maxStack": 1
+  },
+  "3771575140": {
+   "internalName": "Vanity_TX_Farmer_Boots",
+   "category": "Equipment",
+   "maxStack": 1
+  },
+  "3799859133": {
+   "internalName": "Vanity_T3_moth_Legs",
+   "category": "Equipment",
+   "maxStack": 1
+  },
+  "2283229289": {
+   "internalName": "Consumable_Grenade_Explosive_PowderBall_T1",
+   "category": "Weapons",
+   "maxStack": 20
+  },
+  "3124613974": {
+   "internalName": "Consumable_Necromancer_Grenade_T2",
+   "category": "Weapons",
+   "maxStack": 20
+  },
+  "4233298973": {
+   "internalName": "Consumable_Grenade_Explosive_PowderBall_T3",
+   "category": "Weapons",
+   "maxStack": 20
+  },
+  "4211391947": {
+   "internalName": "Armor_T1_Mage_Wizard_DPS_Legs_Loot",
+   "category": "Equipment",
+   "maxStack": 1
+  },
+  "2519499294": {
+   "internalName": "Armor_T1_Ranger_Archer_DPS_Legs_Loot",
+   "category": "Equipment",
+   "maxStack": 1
+  },
+  "2164129974": {
+   "internalName": "Armor_T2_Mage_Wizard_DPS_Legs_Loot",
+   "category": "Equipment",
+   "maxStack": 1
+  },
+  "1314474617": {
+   "internalName": "Armor_T2_Ranger_Assassin_Legs_Loot",
+   "category": "Equipment",
+   "maxStack": 1
+  },
+  "1083013738": {
+   "internalName": "Blueprint_Voxel_Roof_Straight_4m",
+   "category": "Blueprints",
+   "maxStack": 1
+  },
+  "1986896347": {
+   "internalName": "Blueprint_Voxel_Block_05m",
+   "category": "Blueprints",
+   "maxStack": 1
+  },
+  "3474096535": {
+   "internalName": "Tool_Torch01",
+   "category": "Weapons",
+   "maxStack": 1
+  },
+  "2176546463": {
+   "internalName": "Tool_T1_Rake_Scrappy",
+   "category": "BuildTools",
+   "maxStack": 1
+  },
+  "3793200211": {
+   "internalName": "Blueprint_Voxel_Block_Wall_Door_2m",
+   "category": "Blueprints",
+   "maxStack": 1
+  },
+  "213939880": {
+   "internalName": "Prop_Storage_24_T1_Box",
+   "category": "BuildTools",
+   "maxStack": 1
+  },
+  "2574733718": {
+   "internalName": "Tool_T0_Rake_Wooden",
+   "category": "BuildTools",
+   "maxStack": 1
+  },
+  "1004393385": {
+   "internalName": "NPC_Crafter_Farmer01",
+   "category": "BuildTools",
+   "maxStack": 1
+  },
+  "2231489185": {
+   "internalName": "Tool_Building_Screwdriver",
+   "category": "BuildTools",
+   "maxStack": 1
+  },
+  "333200327": {
+   "internalName": "Prop_Decoration_T1_GardenGnome_02c",
+   "category": "BuildTools",
+   "maxStack": 50
+  },
+  "3948210071": {
+   "internalName": "Vanity_T1_Dress_Helmet",
+   "category": "Equipment",
+   "maxStack": 1
+  },
+  "333350411": {
+   "internalName": "Vanity_TX_PactMoon_Chest",
+   "category": "Equipment",
+   "maxStack": 1
+  },
+  "357631245": {
+   "internalName": "Vanity_T1_Dress_Gloves",
+   "category": "Equipment",
+   "maxStack": 1
+  },
+  "3224594917": {
+   "internalName": "Vanity_T1_Dress_Legs",
+   "category": "Equipment",
+   "maxStack": 1
+  },
+  "573920683": {
+   "internalName": "Armor_T1_Warrior_DPS_Helmet_Loot",
+   "category": "Equipment",
+   "maxStack": 1
+  },
+  "2958403525": {
+   "internalName": "Armor_T1_Mage_Wizard_DPS_Arms_Loot",
+   "category": "Equipment",
+   "maxStack": 1
+  },
+  "173909852": {
+   "internalName": "Armor_T3_Mage_BattleWand_Boots_Loot",
+   "category": "Equipment",
+   "maxStack": 1
+  },
+  "965966202": {
+   "internalName": "Ring_T1_Ring_of_Health",
+   "category": "Equipment",
+   "maxStack": 1
+  },
+  "284749629": {
+   "internalName": "Ward_T2_Loot",
+   "category": "Equipment",
+   "maxStack": 1
+  },
+  "1789305300": {
+   "internalName": "Tool_Grappling_Hook_improved",
+   "category": "Tools",
+   "maxStack": 1
+  },
+  "1397467393": {
+   "internalName": "Tool_Glider_T2",
+   "category": "Tools",
+   "maxStack": 1
+  },
+  "3728213390": {
+   "internalName": "Backpack_T1_NEW",
+   "category": "Equipment",
+   "maxStack": 1
+  },
+  "1101501148": {
+   "internalName": "Material_T1_Token_WeaponUpgrade_Rune01",
+   "category": "Materials",
+   "maxStack": 5000
+  },
+  "2711958397": {
+   "internalName": "Weapon_T2_1H_Wand_02_Ice",
+   "category": "Weapons",
+   "maxStack": 1
+  },
+  "256634933": {
+   "internalName": "Tool_T1_Pickaxe_Scrap_Grassland",
+   "category": "BuildTools",
+   "maxStack": 1
+  },
+  "2811112772": {
+   "internalName": "Tool_T1_Axe_Scrap_Grassland",
+   "category": "Tools",
+   "maxStack": 1
+  },
+  "3656080316": {
+   "internalName": "_Food_T2_dish_mushroom_MushroomSkewer",
+   "category": "Consumables",
+   "maxStack": 20
+  },
+  "3168936309": {
+   "internalName": "Weapon_T3_2H_Staff_01",
+   "category": "Weapons",
+   "maxStack": 1
+  }
+ }
+}

@@ -1,0 +1,81 @@
+# Where items no chest of the base holds yet should go, judged from the chest names of
+# fixtures/base.json (written before looking at the test's output). Item <TAB> chest.
+# Ambiguous ones are left out (Granite, Glass, teas, grilled fish, keys, Paper).
+# Materials
+Iron Bars	Stone and Metal
+Gold Bars	Stone and Metal
+Celestium Bars	Stone and Metal
+Iron Ore	Stone and Metal
+Gold Ore	Stone and Metal
+Celestium Ore	Stone and Metal
+Coal	Stone and Metal
+Fabric	Cloth & Leather
+Blue Fabric	Cloth & Leather
+Red Fabric	Cloth & Leather
+Hardened Leather	Cloth & Leather
+Reptile Leather	Cloth & Leather
+Raw Wool	Cloth & Leather
+Conifer Logs	Wood
+Bamboo Logs	Wood
+Palm Wood Logs	Wood
+Icy Giant Bones	Bones & Ectoplasm
+Fish Bones	Bones & Ectoplasm
+Monstrous Ribs	Bones & Ectoplasm
+Ectoplasm	Bones & Ectoplasm
+Greater Ectoplasm	Bones & Ectoplasm
+Ectoplasm Shard	Bones & Ectoplasm
+Amethyst	Gems
+Diamond	Gems
+Aquamarine	Gems
+Moonstone	Gems
+Black Powder	Explosives
+Fell Cyclops Head	Critter & Heads
+Hollow Titan Head	Critter & Heads
+Poison Gland	Critter & Heads
+Ammonia Gland	Critter & Heads
+Shroud Gel	Shroud Stuff
+Shroud Adhesive	Shroud Stuff
+Brittle Shroud Flakes	Shroud Stuff
+Sand	Terrain & Roof
+Albaneve Summits Dirt	Terrain & Roof
+Fertilised Farm Soil	Soil
+# Consumables
+Raw Fatty Meat	Meat Food
+Raw Dune Armadillo Meat	Meat Food
+Grilled Wolf Meat	Cooked Food
+Grilled Bird Meat	Cooked Food
+Grilled Fatty Meat	Cooked Food
+Beef Stew	Cooked Food
+Chicken Soup	Cooked Food
+Vegetable Soup	Cooked Food
+Pumpkin	Vegetarian Food
+Banana	Vegetarian Food
+Coconut	Vegetarian Food
+Yucca Fruit	Vegetarian Food
+Shiitake Mushroom	Vegetarian Food
+Milk	Vegetarian Food
+Superior Health Potion	Potions
+Ultimate Mana Potion	Potions
+Greater Antidote	Potions
+Shimmerfin	Fish Stuff
+Yellowfin	Fish Stuff
+Improved Bandage	Consumables
+Ultimate Bandage	Consumables
+# Ammunition
+Iron Arrow	Bows & Arrows
+Steel Arrow	Bows & Arrows
+Wooden Arrow	Bows & Arrows
+Explosive Arrow I	Bows & Arrows
+Fire Bolt IV	Staves & Spells
+Ice Bolt III	Staves & Spells
+Heal Beam	Staves & Spells
+Rare Fishing Bait	Fish Stuff
+Maggots	Fish Stuff
+# Gems, collectibles, tools
+Gem of Burning	Gems
+Crab Fossil	Fossils
+Fish Fossil	Fossils
+Trilobites	Fossils
+Bound Tome	Books & Gold Coins
+Mysterious Tome	Books & Gold Coins
+Iron Axe	Tools & Torches

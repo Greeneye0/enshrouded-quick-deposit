@@ -1,10 +1,16 @@
 #include <windows.h>
 #include <atomic>
+#include "character.h"
 #include "chat.h"
 #include "client.h"
 #include "config.h"
 #include "inventory.h"
+#include "glow.h"
 #include "hints.h"
+#include "lang.h"
+#include "host.h"
+#include "silhouette.h"
+#include "station.h"
 #include "keep.h"
 #include "log.h"
 #include "../../common/greeneye.h"
@@ -13,7 +19,7 @@
 namespace bridge_ops { void Register(); }
 #endif
 
-#define QD_VERSION "1.3.7"
+#define QD_VERSION "1.3.18"
 
 bool LoadProxyTargets();
 
@@ -74,10 +80,19 @@ static void StartMod()
     }
     client::SetConfig(g_config);
     keep::Load(g_config.keepItems, g_config.keepKey);
+    character::Init();
     bool keepShown = keep::Init();
     if (!keepShown)
         Log("keep marks: kept items from quick-deposit.ini still stay, but are not shown");
-    hints::Init(g_config.doubleSortMs > 0, keepShown ? g_config.keepKey : 0);
+#ifdef QD_BRIDGE
+    station::Init();
+#endif
+    host::Init();
+    glow::Init();
+    silhouette::Init();
+    lang::SetOverride(g_config.language);
+    chat::SetMode(g_config.chat);
+    hints::Init(g_config.doubleSortMs > 0,keepShown ? g_config.keepKey : 0);
 #ifdef QD_BRIDGE
     bridge_ops::Register();
     bridge::Start(QD_VERSION "-dev");
@@ -103,13 +118,33 @@ static bool StartQuickDeposit(const char* how, const GreeneyeHost* host)
 // With the loader's API 2 every hook goes through the loader, so Quick Deposit can be reloaded
 // while the game runs; what it learned from the game (chat sender, ECS registries, item
 // databases) is kept by the loader across reloads.
+// The dedicated server: only the host's part (host.h), so Quick Stack Stations leave the items
+// players keep. Its log is quick-deposit.log in the server's greeneye\quick-deposit\.
+static bool StartServer(const GreeneyeHost* host)
+{
+    if (!greeneye::ClaimProcess(L"QuickDeposit", host))
+        return false;
+    LogInit(greeneye::HostHasHooks(host) && host->generation > 1);
+    Log("Quick Deposit " QD_VERSION " server companion loaded");
+    bool ok = chat::Init() && host::Init();
+    Log(ok ? "server: Quick Stack Stations leave the items players keep" : "server: inactive (see above)");
+    return ok;
+}
+
 GREENEYE_MOD_START
 {
-    if (!greeneye::HostOk(host) || host->side != kGreeneyeClient)
+    if (!greeneye::HostOk(host))
+        return false;
+    if (host->side == kGreeneyeServer) {
+        greeneye::UseHost(host);
+        greeneye::SetDataDir(host->modDir);
+        return StartServer(host);
+    }
+    if (host->side != kGreeneyeClient)
         return false;
     greeneye::UseHost(host);
     if (greeneye::Host()) {
-        chat::UsePersistentState(static_cast<uint64_t*>(host->keep("quick-deposit.chat", 4 * sizeof(uint64_t))));
+        chat::UsePersistentState(static_cast<uint64_t*>(host->keep("quick-deposit.chat", 5 * sizeof(uint64_t))));
         inv::UseKept(host);
     }
     greeneye::SetDataDir(host->modDir);

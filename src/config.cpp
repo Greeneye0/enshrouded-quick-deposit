@@ -3,6 +3,7 @@
 #include <cstdlib>
 #include <cstring>
 #include <cctype>
+#include <algorithm>
 #include "config.h"
 #include "inventory.h"
 #include "../../common/greeneye.h"
@@ -14,6 +15,7 @@ static const char* IniPath()
     return greeneye::DataPath("quick-deposit.ini");
 }
 static const char* kDefaultCategories = "all";
+static const char* kDefaultOrder = "item,kind,name,weapons,nearest";
 
 static void WriteDefaults(const Config& c)
 {
@@ -32,12 +34,24 @@ static void WriteDefaults(const Config& c)
         "; tier2Categories: all, or the item categories tier 2 may move: Equipment, Weapons,\n"
         ";   Tools, Instrument, FishingRod, BuildTools, Consumables, Ammunition, Materials,\n"
         ";   Blueprints, Collectibles, AnimalFood, PetFood, WeaponGem\n"
+        "; tier2Order: how tier 2 picks a chest, first match wins: item (holds the same item), kind\n"
+        ";   (holds the most items of the same kind), name (its name matches the item), weapons (holds\n"
+        ";   the most weapons; weapons only), nearest. Leave a rule out to skip it; a stack none of\n"
+        ";   them places stays in the backpack (e.g. name,item,kind: chest names first)\n"
+        "; newItems: sort | stay - stay leaves items no chest holds yet in the backpack\n"
         "; Chests whose name starts with -- are never used. excludeChests: more chest names the mod\n"
         ";   never uses, comma-separated (e.g. My Stuff)\n"
+        "; glowMs: how long the chests a deposit filled glow green after you close the inventory (0 = off)\n"
         "; keepKey: hover an item in your inventory and press it to keep that kind of item in the\n"
         ";   backpack (teal border); press it again to unmark. A letter, F1-F12 or a key code in hex\n"
         ";   (empty = off)\n"
-        "; keepItems: the kept items, comma-separated (keepKey writes it, e.g. Health Potion,Torch)\n"
+        "; keepItems: the kept items, comma-separated (keepKey writes it, e.g. Health Potion,Torch).\n"
+        ";   Each character has its own list, in every world: [Keep.<character id>] keepItems. The\n"
+        ";   list here is used until a character is known; the first character takes it over.\n"
+        "; language: auto (the game's) or english, german, french, italian, spanish, brazilian, polish,\n"
+        ";   russian, ukrainian, turkish, japanese, koreana, schinese, tchinese, thai\n"
+        "; chat: full | short | off - deposit reports in your chat: every chest, one summary line, or\n"
+        ";   none (only you see them; the report file always has everything)\n"
         "[QuickDeposit]\n"
         "enabled=1\n"
         "doubleSortMs=%d\n"
@@ -46,11 +60,54 @@ static void WriteDefaults(const Config& c)
         "settleMs=%d\n"
         "tier2=on\n"
         "tier2Categories=%s\n"
+        "tier2Order=%s\n"
+        "newItems=sort\n"
         "excludeChests=\n"
+        "glowMs=%d\n"
         "keepKey=K\n"
-        "keepItems=\n",
-        c.doubleSortMs, c.delayMs, c.settleMs, kDefaultCategories);
+        "keepItems=\n"
+        "language=auto\n"
+        "chat=full\n",
+        c.doubleSortMs, c.delayMs, c.settleMs, kDefaultCategories, kDefaultOrder, c.glowMs);
     fclose(f);
+}
+
+// An ini from an older version lacks the newer settings, and one added by hand at the end of the
+// file lands in the last [Keep.<character>] section, where it is never read. Writes every missing
+// setting into [QuickDeposit], taking a value stranded in another section along (and removing it
+// there), else the default.
+static void AddMissingSettings(const Config& c)
+{
+    char num[3][16];
+    sprintf_s(num[0], "%d", c.doubleSortMs);
+    sprintf_s(num[1], "%d", c.delayMs);
+    sprintf_s(num[2], "%d", c.settleMs);
+    char glow[16];
+    sprintf_s(glow, "%d", c.glowMs);
+    const char* const settings[][2] = {
+        {"enabled", "1"},          {"doubleSortMs", num[0]},  {"hotkey", ""},
+        {"delayMs", num[1]},       {"settleMs", num[2]},      {"tier2", "on"},
+        {"tier2Categories", kDefaultCategories}, {"tier2Order", kDefaultOrder}, {"newItems", "sort"},
+        {"excludeChests", ""},     {"glowMs", glow},          {"keepKey", "K"},
+        {"language", "auto"},      {"chat", "full"},
+    };
+    static char sections[8192];
+    DWORD len = GetPrivateProfileSectionNamesA(sections, sizeof(sections), IniPath());
+    char buf[512];
+    for (const auto& s : settings) {
+        if (GetPrivateProfileStringA("QuickDeposit", s[0], "\x01", buf, sizeof(buf), IniPath()) != 1 || buf[0] != '\x01')
+            continue;
+        const char* value = s[1];
+        for (const char* sec = sections; sec < sections + len && *sec; sec += strlen(sec) + 1) {
+            if (_stricmp(sec, "QuickDeposit") == 0 ||
+                (GetPrivateProfileStringA(sec, s[0], "\x01", buf, sizeof(buf), IniPath()) == 1 && buf[0] == '\x01'))
+                continue;
+            WritePrivateProfileStringA(sec, s[0], nullptr, IniPath());
+            value = buf;
+            break;
+        }
+        WritePrivateProfileStringA("QuickDeposit", s[0], value, IniPath());
+    }
 }
 
 static int ParseKey(const char* s, int fallback)
@@ -99,6 +156,28 @@ static bool IsOldTestDefault(const char* list)
     }
 }
 
+// tier2Order: rule names, comma-separated; unknown and repeated names are skipped. None known
+// keeps the default order.
+void ParseTier2Order(const char* list, Config& c)
+{
+    static const char* const names[kTier2Rules] = {"item", "kind", "name", "weapons", "nearest"};
+    Tier2Rule order[kTier2Rules];
+    int count = 0;
+    char buf[256];
+    strncpy_s(buf, list, _TRUNCATE);
+    char* ctx = nullptr;
+    for (char* tok = strtok_s(buf, ", ", &ctx); tok; tok = strtok_s(nullptr, ", ", &ctx))
+        for (int r = 0; r < kTier2Rules; ++r) {
+            auto rule = static_cast<Tier2Rule>(r);
+            if (_stricmp(tok, names[r]) == 0 && std::find(order, order + count, rule) == order + count)
+                order[count++] = rule;
+        }
+    if (!count)
+        return;
+    std::copy(order, order + count, c.tier2Order);
+    c.tier2RuleCount = count;
+}
+
 static int ClampInt(int v, int lo, int hi, int fallback)
 {
     return (v >= lo && v <= hi) ? v : fallback;
@@ -109,6 +188,8 @@ Config LoadConfig()
     Config c;
     if (GetFileAttributesA(IniPath()) == INVALID_FILE_ATTRIBUTES)
         WriteDefaults(c);
+    else
+        AddMissingSettings(c);
 
     char buf[512];
     c.enabled = GetPrivateProfileIntA("QuickDeposit", "enabled", 1, IniPath()) != 0;
@@ -125,10 +206,18 @@ Config LoadConfig()
         strcpy_s(buf, kDefaultCategories);
     }
     c.tier2Categories = ParseCategories(buf);
+    GetPrivateProfileStringA("QuickDeposit", "tier2Order", kDefaultOrder, buf, sizeof(buf), IniPath());
+    ParseTier2Order(buf, c);
+    GetPrivateProfileStringA("QuickDeposit", "newItems", "sort", buf, sizeof(buf), IniPath());
+    c.newItemsStay = _stricmp(buf, "stay") == 0;
     GetPrivateProfileStringA("QuickDeposit", "excludeChests", "", c.excludeChests, sizeof(c.excludeChests), IniPath());
+    c.glowMs = ClampInt(GetPrivateProfileIntA("QuickDeposit", "glowMs", c.glowMs, IniPath()), 0, 60000, c.glowMs);
     // Older ini files lack keepKey: K, as written for new ones.
     GetPrivateProfileStringA("QuickDeposit", "keepKey", "K", buf, sizeof(buf), IniPath());
     c.keepKey = buf[0] ? ParseKey(buf, 0) : 0;
     GetPrivateProfileStringA("QuickDeposit", "keepItems", "", c.keepItems, sizeof(c.keepItems), IniPath());
+    GetPrivateProfileStringA("QuickDeposit", "language", "auto", c.language, sizeof(c.language), IniPath());
+    GetPrivateProfileStringA("QuickDeposit", "chat", "full", buf, sizeof(buf), IniPath());
+    c.chat = _stricmp(buf, "short") == 0 ? chat::Mode::Short : _stricmp(buf, "off") == 0 ? chat::Mode::Off : chat::Mode::Full;
     return c;
 }
