@@ -130,6 +130,9 @@ const Row kTable[static_cast<int>(Str::Count)] = {
      "немає місця в скринях для предметів: %u", "sandıklarda %u eşya için yer yok",
      "チェストに空きがなく、%u個のアイテムを収納できません", "상자에 공간이 없어 아이템 %u개를 보관하지 못했습니다",
      "箱子已满，%u 件物品无法存放", "箱子已滿，%u 件物品無法存放", "หีบเต็ม ฝากไอเท็มไม่ได้ %u ชิ้น"},
+    // Deposited
+    {"Deposited:", "Eingelagert:", "Déposé :", "Depositato:", "Depositado:", "Depositado:", "Odłożono:",
+     "Сложено:", "Складено:", "Bırakılan:", "収納したもの:", "보관함:", "已存放：", "已存放：", "ฝากแล้ว:"},
 };
 
 // Steam's language codes, by column.

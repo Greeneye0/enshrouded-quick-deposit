@@ -61,6 +61,8 @@ using UiDispatchFn = void (*)(void* client, uint8_t* cmd);
 UiCommandLoopFn g_originalLoop = nullptr;
 UiDispatchFn g_originalDispatch = nullptr;
 std::atomic<bool> g_requested{false};
+ULONGLONG g_lastRunEnd = 0;               // when the last deposit finished
+constexpr ULONGLONG kStationRepeatMs = 3000; // a station press this soon after it is ignored
 std::atomic<bool> g_requestSorted{false}; // the request came with G twice, which sorts the backpack
 Config g_pending;
 Config g_cfg;
@@ -1167,19 +1169,34 @@ void WriteReport()
         storedChests = filledCount;
         if (g_cfg.glowMs > 0)
             glow::Pulse(filled, filledCount, static_cast<uint32_t>(g_cfg.glowMs));
-    } else {
-        // Chest contents unknown to the client: report what left the backpack.
+    }
+    if (!lines) {
+        // Chest contents unknown to the client, or not yet updated (another game hosts, and it
+        // sends a chest's contents late): report what left the backpack.
+        storedChests = -1;
         uint32_t ids[128];
         uint64_t counts[128];
         int n = Totals(r.backpackBefore, ids, counts, 128);
+        char chatLine[360];
+        int chatLen = _snprintf_s(chatLine, _TRUNCATE, "Quick Deposit: %s", lang::T(lang::Str::Deposited));
+        const int chatStart = chatLen;
         for (int i = 0; i < n; ++i) {
             uint64_t now = CountOf(after, ids[i]);
             if (now < counts[i]) {
-                storedItems += counts[i] - now;
-                rep.Line("  deposited %s x%llu", inv::Describe(ids[i]).shown, static_cast<unsigned long long>(counts[i] - now));
+                const char* name = inv::Describe(ids[i]).shown;
+                const unsigned long long gone = counts[i] - now;
+                storedItems += gone;
+                rep.Line("  deposited %s x%llu", name, gone);
+                if (chatLen > 0 && chatLen < 280) {
+                    int w = _snprintf_s(chatLine + chatLen, sizeof(chatLine) - chatLen, _TRUNCATE, "%s %s x%llu",
+                                        chatLen > chatStart ? "," : "", name, gone);
+                    chatLen = w < 0 ? 280 : chatLen + w;
+                }
                 ++lines;
             }
         }
+        if (lines)
+            chat::Post(chatLine, chat::Kind::Detail);
     }
     // What stayed because its chests are full.
     uint64_t noRoomItems = 0;
@@ -1317,6 +1334,121 @@ void UpdateBackpackPages()
     keep::SetBackpack(me);
 }
 
+// G sorts the backpack, kept stacks too, and a stray G scatters them among the rest. Where they
+// were before the sort is noted (on the game thread, when the sort command goes out); once the
+// sorted backpack has arrived and stays the same, each is moved back to its slot, one transfer
+// at a time (a move onto a taken slot swaps the two). Unmarked items stay sorted.
+struct KeptSpot {
+    uint32_t page;
+    int slot;
+    uint32_t itemId;
+};
+struct {
+    KeptSpot spots[64];
+    int count = 0;
+    ULONGLONG sortedAt = 0, quietFrom = 0, nextMove = 0;
+    uint64_t sig = 0;
+    int moves = 0;
+} g_unsort;
+
+void NoteKeptSpots()
+{
+    const uint32_t me = LocalPlayerId();
+    static inv::Owner backpack;
+    if (!me || !inv::ReadOwner(me, backpack))
+        return;
+    ULONGLONG now = GetTickCount64();
+    if (g_unsort.count && now - g_unsort.sortedAt < 2000)
+        return; // G twice: the first sort's spots are the ones to keep
+    static keep::Plan plan;
+    keep::PlanFor(backpack, plan);
+    g_unsort.count = 0;
+    for (int p = 0; p < backpack.pageCount; ++p) {
+        const inv::Page& page = backpack.pages[p];
+        if (!IsStoragePage(page) || inv::IsHotbarPage(backpack, page.entity))
+            continue;
+        for (int s = 0; s < inv::kSlotsPerPage && g_unsort.count < 64; ++s)
+            if (page.slots[s].itemId && plan.keep[p][s])
+                g_unsort.spots[g_unsort.count++] = {page.entity, s, page.slots[s].itemId};
+    }
+    g_unsort.sortedAt = now;
+    g_unsort.quietFrom = 0;
+    g_unsort.sig = 0;
+    g_unsort.moves = 0;
+}
+
+// Once per tick: puts kept stacks back where they were before the sort (game thread).
+void RestoreKeptSpots()
+{
+    constexpr ULONGLONG kSettledMs = 400, kGiveUpMs = 15000;
+    if (!g_unsort.count || g_run.phase != Phase::Idle || g_requested)
+        return;
+    ULONGLONG now = GetTickCount64();
+    if (now - g_unsort.sortedAt > kGiveUpMs || g_unsort.moves > 2 * g_unsort.count) {
+        Log("keep marks: %d kept stacks could not all go back after the sort", g_unsort.count);
+        g_unsort.count = 0;
+        return;
+    }
+    const uint32_t me = LocalPlayerId();
+    uint64_t sig = BackpackSig(me);
+    if (sig != g_unsort.sig) {
+        g_unsort.sig = sig;
+        g_unsort.quietFrom = now;
+        return;
+    }
+    if (now - g_unsort.quietFrom < kSettledMs || now < g_unsort.nextMove)
+        return;
+    static inv::Owner backpack;
+    if (!inv::ReadOwner(me, backpack))
+        return;
+    auto at = [&](uint32_t page, int slot) -> const inv::Stack* {
+        for (int p = 0; p < backpack.pageCount; ++p)
+            if (backpack.pages[p].entity == page)
+                return &backpack.pages[p].slots[slot];
+        return nullptr;
+    };
+    auto home = [&](uint32_t page, int slot) {
+        for (int i = 0; i < g_unsort.count; ++i)
+            if (g_unsort.spots[i].page == page && g_unsort.spots[i].slot == slot)
+                return i;
+        return -1;
+    };
+    for (int i = 0; i < g_unsort.count; ++i) {
+        const KeptSpot& k = g_unsort.spots[i];
+        const inv::Stack* there = at(k.page, k.slot);
+        if (!there || there->itemId == k.itemId)
+            continue;
+        // The stack of this item that is not at a spot of its own item already.
+        for (int p = 0; p < backpack.pageCount; ++p) {
+            const inv::Page& page = backpack.pages[p];
+            if (!IsStoragePage(page) || inv::IsHotbarPage(backpack, page.entity))
+                continue;
+            for (int s = 0; s < inv::kSlotsPerPage; ++s) {
+                if (page.slots[s].itemId != k.itemId)
+                    continue;
+                int h = home(page.entity, s);
+                if (h >= 0 && g_unsort.spots[h].itemId == k.itemId)
+                    continue;
+                alignas(8) uint8_t cmd[kCmdSize] = {};
+                cmd[0] = kCmdTransfer;
+                At<uint32_t>(cmd, kCmdTargetSlot) = k.page;
+                cmd[kCmdTargetSlot + 4] = static_cast<uint8_t>(k.slot);
+                At<uint32_t>(cmd, kCmdSourceSlot) = page.entity;
+                cmd[kCmdSourceSlot + 4] = static_cast<uint8_t>(s);
+                cmd[kCmdType] = kTypeTransfer;
+                Send(g_client, cmd);
+                ++g_unsort.moves;
+                g_unsort.nextMove = now + static_cast<ULONGLONG>(g_baseCfg.delayMs);
+                g_unsort.sig = 0; // wait for the backpack to settle again
+                return;
+            }
+        }
+    }
+    if (g_unsort.moves)
+        Log("keep marks: %d kept stacks back in place after the sort (%d moves)", g_unsort.count, g_unsort.moves);
+    g_unsort.count = 0;
+}
+
 std::atomic<void*> g_lastApp{nullptr}; // dev inspection
 
 void Tick(void* app)
@@ -1357,7 +1489,11 @@ void Tick(void* app)
         }
     }
     if (host::TakeStationUse()) {
-        if (g_run.phase == Phase::Idle) {
+        // A station press can reach here again right after its deposit (the interaction repeats):
+        // that one would only find nothing left and say so.
+        if (g_run.phase == Phase::Idle && GetTickCount64() - g_lastRunEnd < kStationRepeatMs) {
+            Log("Quick Stack Station again right after a deposit - ignored");
+        } else if (g_run.phase == Phase::Idle) {
             g_pending = g_baseCfg;
             g_requested = true;
             Log("deposit requested (Quick Stack Station)");
@@ -1404,6 +1540,8 @@ void Tick(void* app)
         std::string why;
         Start(ClientFromApp(app), why);
     }
+    if (!sortSince && !start)
+        RestoreKeptSpots(); // after a deposit, not between G twice and its deposit
     Run& r = g_run;
     if (r.phase == Phase::Idle)
         return;
@@ -1472,6 +1610,7 @@ void Tick(void* app)
         }
         WriteReport();
         r.phase = Phase::Idle;
+        g_lastRunEnd = GetTickCount64();
         ++g_runsFinished;
         break;
     default:
@@ -1532,6 +1671,8 @@ void UiDispatchHook(void* cl, uint8_t* cmd)
         const uint32_t sorted = At<uint32_t>(cmd, kCmdSortOwner);
         const uint32_t me = LocalPlayerId();
         ULONGLONG now = GetTickCount64();
+        if (me && sorted == me && keep::Any())
+            NoteKeptSpots();
         if (me && sorted != me) {
             g_lastSort = 0;
         } else if (g_lastSort && now - g_lastSort <= static_cast<ULONGLONG>(g_baseCfg.doubleSortMs)) {

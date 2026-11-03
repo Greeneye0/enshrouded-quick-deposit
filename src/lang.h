@@ -24,6 +24,7 @@ enum class Str : int {
     WaitingForCharacter, // nothing deposited: which character you play is not known yet
     NoRoom,      // stayed because its chests are full; followed by " item xN, item xN"
     NoRoomCount, // chat=short: %u items stayed because their chests are full
+    Deposited,   // chest contents unknown: what left the backpack; followed by " item xN, item xN"
     Count
 };
 
