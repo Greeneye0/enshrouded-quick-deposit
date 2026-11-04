@@ -5,10 +5,11 @@
 #include <share.h>
 #include "log.h"
 #include "../../common/greeneye.h"
+#include "../../common/async_log.h"
 
 static CRITICAL_SECTION g_logLock;
 static bool g_logReady = false;
-static FILE* g_logFile = nullptr;
+static async_log::Writer g_writer;
 static std::deque<LogLine> g_ring;
 static uint64_t g_seq = 0;
 constexpr size_t kRingSize = 2000;
@@ -18,7 +19,8 @@ void LogInit(bool reload)
     InitializeCriticalSection(&g_logLock);
     g_logReady = true;
     // Shared, so a reloaded Quick Deposit (hot reload) can append while the old one keeps its handle.
-    g_logFile = _fsopen(greeneye::DataPath("quick-deposit.log"), reload ? "a" : "w", _SH_DENYNO);
+    FILE* file = _fsopen(greeneye::DataPath("quick-deposit.log"), reload ? "a" : "w", _SH_DENYNO);
+    g_writer.Open(file);
 }
 
 void Log(const char* fmt, ...)
@@ -35,10 +37,17 @@ void Log(const char* fmt, ...)
     va_end(args);
 
     EnterCriticalSection(&g_logLock);
-    if (g_logFile) {
-        fputs(line, g_logFile);
-        fputc('\n', g_logFile);
-        fflush(g_logFile);
+    // On a thread of its own: a slow disk must not stall the caller.
+    {
+        const size_t length = strlen(line);
+        if (length + 1 < sizeof(line)) {
+            line[length] = '\n';
+            g_writer.Write(line, length + 1);
+            line[length] = 0;
+        } else {
+            g_writer.Write(line, length);
+            g_writer.Write("\n", 1);
+        }
     }
     g_ring.push_back({++g_seq, line});
     if (g_ring.size() > kRingSize)

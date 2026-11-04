@@ -104,7 +104,7 @@ The chests a station fills glow green too.
 ## Install
 
 1. Close Enshrouded.
-2. Download `QuickDeposit-1.3.19.zip` from [Releases](../../releases/latest) or
+2. Download `QuickDeposit-1.3.21.zip` from [Releases](../../releases/latest) or
    [Nexus Mods](https://www.nexusmods.com/enshrouded/mods/195).
 3. In Steam: right-click Enshrouded > Manage > Browse local files.
 4. Copy everything from the zip into that folder, keeping the folders: `dbgcore.dll` (the
@@ -148,7 +148,7 @@ edit it while the game is closed.
 - The in-game "area deposit" toggle of a chest is not honored.
 - Chat lines appear under your own name, and only after the first system message of the
   session has arrived (one comes right after you join).
-- Built against game build 1285601 (the 3 November 2026 patch). After a game update the mod
+- Built against game build 1287369 (the 4 November 2026 patch). After a game update the mod
   may stay inactive and log `signature not found`; the game runs normally.
 - Bug reports: please attach `greeneye\quick-deposit\quick-deposit.log`,
   `quick-deposit-report.txt` from the same folder, and `greeneye\loader.log`.
