@@ -13,13 +13,15 @@
 // for its hints, so they look the same, and inserts them right after it. The chest screen has no
 // such entry: there another enabled entry is copied and the hints go before the last two. A hint
 // whose key differs from its copied action's (keepKey; G on the chest screen) gets it this way:
-// while that one entry draws, the action's binding record says that key, and is put back right
-// after. Only in the inventory screen and with a chest open, not in other screens that show
+// while that one entry draws, the action's binding record says that key and controller button
+// (common/game_hints.h), and is put back right after. The game picks the record's half for the
+// device in use, as for its own hints; a hint with nothing bound on that device is left out. Only in the inventory screen and with a chest open, not in other screens that show
 // backpack slots (the equipment slot picker). The text follows the game's language (lang.h).
 #include <windows.h>
 #include <cstdio>
 #include <cstring>
 #include "../../common/greeneye.h"
+#include "../../common/game_hints.h"
 #include "hints.h"
 #include "keep.h"
 #include "lang.h"
@@ -47,13 +49,14 @@ constexpr size_t kBinding = 0xc4;
 constexpr uint16_t kHidG = 0x0a;
 
 bool g_depositHint = false;
-uint16_t g_keepHid = 0; // 0: no keep hint
+greeneye::input::SharedBinding g_keep;
+bool g_keepAllowed = true;
 alignas(16) uint8_t g_entries[(kMaxEntries + 2) * kEntry];
 // Quick Deposit's hints among g_entries that show another key than their copied action's, while
 // the bar draws.
 struct Swap {
     uint8_t* entry;
-    uint16_t hid;
+    greeneye::input::Binding binding;
 };
 Swap g_swaps[2];
 int g_swapCount = 0;
@@ -94,20 +97,6 @@ const Text& KeepText()
     static Text t;
     static bool final = false;
     return HintText(lang::Str::KeepHint, t, final);
-}
-
-// The HID usage code the game's bindings use for a virtual key: letters, digits, F1-F12.
-uint16_t HidOf(int vk)
-{
-    if (vk >= 'A' && vk <= 'Z')
-        return static_cast<uint16_t>(0x04 + vk - 'A');
-    if (vk >= '1' && vk <= '9')
-        return static_cast<uint16_t>(0x1e + vk - '1');
-    if (vk == '0')
-        return 0x27;
-    if (vk >= VK_F1 && vk <= VK_F12)
-        return static_cast<uint16_t>(0x3a + vk - VK_F1);
-    return 0;
 }
 
 uint8_t* Ui()
@@ -203,7 +192,12 @@ void HintsBody(Span* span, void* options)
     // and an open chest get the hints.
     usable = usable && (now - g_sortDrawnAt <= kScreenStaleMs || keep::ChestShown());
     int copy = sort >= 0 ? sort : usable ? TemplateEntry(span) : -1;
-    if (copy < 0 || (!g_depositHint && !g_keepHid)) {
+    const bool padInUse = greeneye::hints::PadInUse();
+    const greeneye::input::Binding keepBinding = g_keep.Get();
+    const bool showKeep = greeneye::hints::ShowsOn(keepBinding, padInUse);
+    // The deposit hint: on a controller only beside the game's Sort, whose button it copies
+    const bool showDeposit = g_depositHint && (sort >= 0 || !padInUse);
+    if (copy < 0 || (!showDeposit && !showKeep)) {
         g_originalHints(span, options);
         return;
     }
@@ -214,17 +208,17 @@ void HintsBody(Span* span, void* options)
     const uint8_t* model = span->data + copy * kEntry;
     memcpy(g_entries, span->data, before);
     uint8_t* at = g_entries + before;
-    if (g_depositHint) {
+    if (showDeposit) {
         memcpy(at, model, kEntry);
         SetText(at, DepositText());
         if (sort < 0)
-            g_swaps[g_swapCount++] = {at, kHidG};
+            g_swaps[g_swapCount++] = {at, greeneye::input::MakeBinding("G")};
         at += kEntry;
     }
-    if (g_keepHid) {
+    if (showKeep) {
         memcpy(at, model, kEntry);
         SetText(at, KeepText());
-        g_swaps[g_swapCount++] = {at, g_keepHid};
+        g_swaps[g_swapCount++] = {at, keepBinding};
         at += kEntry;
     }
     memcpy(at, span->data + before, after);
@@ -250,20 +244,17 @@ void HintsHook(Span* span, void* options)
 uint64_t HintHook(uint8_t* entry, void* params)
 {
     greeneye::Lease lease;
-    uint16_t hid = 0;
+    const Swap* swap = nullptr;
     for (int i = 0; lease && entry && i < g_swapCount; ++i)
         if (g_swaps[i].entry == entry)
-            hid = g_swaps[i].hid;
-    uint8_t* b = hid ? Binding(entry[0]) : nullptr;
+            swap = &g_swaps[i];
+    uint8_t* b = swap ? Binding(entry[0]) : nullptr;
     if (!b)
         return g_originalHint(entry, params);
-    // This hint's copied action shows its key for this one entry.
+    // This hint's copied action shows its key and button for this one entry.
     uint8_t saved[kBinding];
     memcpy(saved, b, kBinding);
-    uint16_t device = 1;
-    memcpy(b, &device, 2);
-    memcpy(b + 2, &hid, 2);
-    memset(b + 0x0c, 0, 4); // no modifier
+    greeneye::hints::WriteRecord(b, swap->binding);
     uint64_t result = g_originalHint(entry, params);
     memcpy(b, saved, kBinding);
     return result;
@@ -271,12 +262,16 @@ uint64_t HintHook(uint8_t* entry, void* params)
 
 } // namespace
 
-bool Init(bool depositHint, int keepKey)
+void SetKeep(const greeneye::input::Binding& binding)
+{
+    if (g_keepAllowed)
+        g_keep.Set(binding);
+}
+
+bool Init(bool depositHint)
 {
     g_depositHint = depositHint;
-    g_keepHid = HidOf(keepKey);
-    if (!g_depositHint && !g_keepHid)
-        return true;
+    greeneye::hints::Init(greeneye::Host());
     // doActionHints: mov [rsp+20h], rbx; push rbp, rsi, rdi, r12, r13 (12 bytes)
     auto* bar = FindUnique("48 89 5C 24 20 55 56 57 41 54 41 55 48 8D 6C 24 C9 48 81 EC B0 00 00 00");
     // doActionHint: mov rax, rsp; push rbp, rsi, rdi, r14; lea rbp, [rax-228h] (15 bytes)
@@ -289,7 +284,8 @@ bool Init(bool depositHint, int keepKey)
     g_originalHint = static_cast<HintFn>(InstallHook(one, reinterpret_cast<void*>(&HintHook), 15));
     g_originalHints = static_cast<HintsFn>(InstallHook(bar, reinterpret_cast<void*>(&HintsHook), 12));
     if (!g_originalHint) {
-        g_keepHid = 0; // the hints would show the copied action's key
+        g_keep.Set(greeneye::input::Binding{}); // the hints would show the copied action's key
+        g_keepAllowed = false;
         g_depositHint = false;
     }
     if (!g_originalHints) {

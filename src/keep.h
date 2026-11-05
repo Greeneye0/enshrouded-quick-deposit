@@ -1,4 +1,5 @@
 #pragma once
+#include "../../common/input_binds.h"
 #include <cstdint>
 #include <string>
 #include <vector>
@@ -30,6 +31,8 @@ bool Init();
 
 // The marked names (from keepItems) and the toggle key.
 void Load(const char* list, int key);
+// The keep mark's key and controller button (keepKey in the ini).
+void SetBinding(const greeneye::input::Binding& binding);
 
 // The marks of this character (character.h), from its own list in quick-deposit.ini. The first
 // character without a list takes over the shared keepItems list of older versions; any other
@@ -82,6 +85,7 @@ struct SlotSeen {
     float rect[4];
     uint32_t itemId;
     uint8_t data[32]; // slot data: +0 page entity, +4 slot index, +8 item id, +0x10 count
+    bool selected;    // the slot a controller has selected
 };
 std::vector<SlotSeen> LastFrameSlots();
 // Marks the item to keep count of it (0: every one), or unmarks a marked item.

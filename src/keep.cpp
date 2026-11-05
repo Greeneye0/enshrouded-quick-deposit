@@ -73,11 +73,12 @@ std::mutex g_snapshotLock;
 std::vector<KeptItem> g_snapshot;
 uint64_t g_snapshotVersion = 0;
 uint32_t KeptHere(uint64_t key);
-int g_key = 'K';
+greeneye::input::SharedBinding g_binding;
 bool g_keyDown = false;
 
 // The slot being drawn (game thread).
 uint32_t g_slotItem = 0;
+bool g_slotSelected = false;
 bool g_slotBackground = false; // its background is drawn
 uint8_t g_slotData[32];
 ULONGLONG g_chestSlotAt = 0; // when a slot of an inventory not yours last drew
@@ -157,6 +158,7 @@ void DrawRealHook(void* widget, const float* rect, uint32_t id, uint64_t colour)
             SlotSeen s{};
             memcpy(s.rect, rect, sizeof(s.rect));
             s.itemId = g_slotItem;
+            s.selected = g_slotSelected;
             memcpy(s.data, g_slotData, sizeof(s.data));
             g_thisFrame.push_back(s);
         }
@@ -191,6 +193,17 @@ bool IsBackpackRow(int p)
            !inv::IsHotbarPage(g_backpack, page.entity);
 }
 
+// doItemSlot's second argument, byte +0x80: this is the slot a controller has selected (read in game: it
+// follows the D-pad across the backpack's rows). The mouse goes by the cursor instead.
+bool SlotSelected(const void* style)
+{
+    __try {
+        return style && static_cast<const uint8_t*>(style)[0x80] != 0;
+    } __except (EXCEPTION_EXECUTE_HANDLER) {
+        return false;
+    }
+}
+
 void SlotHook(uint8_t** slot, void* style, void* extra)
 {
     greeneye::Lease lease;
@@ -211,6 +224,8 @@ void SlotHook(uint8_t** slot, void* style, void* extra)
         g_chestSlotAt = GetTickCount64();
     if (!backpack)
         item = 0; // a chest's or the hotbar's slot
+    const bool outerSelected = g_slotSelected;
+    g_slotSelected = SlotSelected(style);
     uint32_t outerItem = g_slotItem;
     bool outerBackground = g_slotBackground;
     uint8_t outerData[32];
@@ -220,6 +235,7 @@ void SlotHook(uint8_t** slot, void* style, void* extra)
     memcpy(g_slotData, data, sizeof(g_slotData));
     g_originalSlot(slot, style, extra);
     g_slotItem = outerItem;
+    g_slotSelected = outerSelected;
     g_slotBackground = outerBackground;
     memcpy(g_slotData, outerData, sizeof(g_slotData));
 }
@@ -230,6 +246,25 @@ bool CursorInUi(float& x, float& y)
     DWORD pid = 0;
     if (foreground)
         GetWindowThreadProcessId(foreground, &pid);
+#ifdef GREENEYE_INPUT_TEST
+    // tools/inputtest.py: the game's window, in front or not
+    if (pid != GetCurrentProcessId() && greeneye::input::GameHasFocus()) {
+        struct Largest { HWND window = nullptr; LONG area = 0; } largest;
+        EnumWindows([](HWND w, LPARAM data) -> BOOL {
+            DWORD owner = 0;
+            GetWindowThreadProcessId(w, &owner);
+            RECT r{};
+            auto* best = reinterpret_cast<Largest*>(data);
+            if (owner == GetCurrentProcessId() && GetClientRect(w, &r) && r.right * r.bottom > best->area) {
+                best->area = r.right * r.bottom;
+                best->window = w;
+            }
+            return TRUE;
+        }, reinterpret_cast<LPARAM>(&largest));
+        foreground = largest.window;
+        pid = GetCurrentProcessId();
+    }
+#endif
     if (pid != GetCurrentProcessId())
         return false;
     POINT cursor{};
@@ -604,9 +639,13 @@ void Parse(const char* list)
     }
 }
 
-void Load(const char* list, int key)
+void SetBinding(const greeneye::input::Binding& binding)
 {
-    g_key = key;
+    g_binding.Set(binding);
+}
+
+void Load(const char* list, int)
+{
     Parse(list);
     if (!g_marks.empty())
         Log("keep marks: %d item types kept", static_cast<int>(g_marks.size()));
@@ -1039,12 +1078,36 @@ void Tick()
             g_lastFrame.clear();
         }
     }
-    if (!g_key || !g_originalSlot)
+    const greeneye::input::Binding binding = g_binding.Get();
+    if (binding.Unbound() || !g_originalSlot)
         return;
+    auto held = [](int vk) { return greeneye::input::KeyDown(vk); };
+    bool down = greeneye::input::KeysHeld(binding, held);
+    // On a controller the mark goes on the slot it has selected, not the one under the mouse.
+    static bool s_padWasDown = false;
+    const bool padDown = binding.padCount && !g_lastFrame.empty() && greeneye::input::GameHasFocus() &&
+                         greeneye::input::PadHeld(binding, greeneye::input::ReadPad());
+    const bool padPressed = padDown && !s_padWasDown;
+    s_padWasDown = padDown;
+    if (padPressed) {
+        for (const SlotSeen& s : g_lastFrame) {
+            if (!s.selected)
+                continue;
+            uint32_t count;
+            memcpy(&count, s.data + 0x10, sizeof(count));
+            uint64_t key = static_cast<uint64_t>(*reinterpret_cast<const uint32_t*>(s.data)) << 8 | s.data[4];
+            ToggleStack(s.itemId, count, KeptHere(key), key);
+            break;
+        }
+    }
     // Bit 0: pressed since the last call, so a tap between two ticks still counts.
-    SHORT state = GetAsyncKeyState(g_key);
-    bool down = (state & 0x8000) != 0;
-    bool pressed = (down && !g_keyDown) || (!down && (state & 1));
+    bool tapped = false;
+    for (int i = 0; i < binding.keyCount; ++i) {
+        const greeneye::input::KeyChord& key = binding.keys[i];
+        if (key.vk && (GetAsyncKeyState(key.vk) & 1) && !key.shift && !key.ctrl && !key.alt)
+            tapped = true;
+    }
+    bool pressed = (down && !g_keyDown) || (!down && tapped);
     g_keyDown = down;
     if (!pressed)
         return;

@@ -19,27 +19,26 @@
 namespace bridge_ops { void Register(); }
 #endif
 
-#define QD_VERSION "1.3.21"
+#define QD_VERSION "1.3.22"
 
 bool LoadProxyTargets();
 
 static Config g_config;
 static std::atomic<unsigned> g_hotkeyRun{0}; // a hotkey thread runs while this is its number
 static HANDLE g_hotkeyThread = nullptr;
-
-static bool GameWindowFocused()
-{
-    DWORD pid = 0;
-    GetWindowThreadProcessId(GetForegroundWindow(), &pid);
-    return pid == GetCurrentProcessId();
-}
+static bool g_keepHints = false;
 
 static DWORD WINAPI HotkeyThread(LPVOID run)
 {
     bool wasDown = false;
     while (g_hotkeyRun.load() == static_cast<unsigned>(reinterpret_cast<uintptr_t>(run))) {
-        bool down = (GetAsyncKeyState(g_config.hotkey) & 0x8000) != 0;
-        if (down && !wasDown && GameWindowFocused())
+        if (RefreshKeys(g_config)) {
+            keep::SetBinding(g_config.keepBinding);
+            if (g_keepHints)
+                hints::SetKeep(g_config.keepBinding);
+        }
+        bool down = greeneye::input::Held(g_config.hotkey);
+        if (down && !wasDown)
             client::RequestDeposit(g_config);
         wasDown = down;
         Sleep(20);
@@ -49,8 +48,6 @@ static DWORD WINAPI HotkeyThread(LPVOID run)
 
 static void StartHotkey()
 {
-    if (!g_config.hotkey)
-        return;
     unsigned run = ++g_hotkeyRun;
     g_hotkeyThread = CreateThread(nullptr, 0, HotkeyThread, reinterpret_cast<LPVOID>(static_cast<uintptr_t>(run)), 0, nullptr);
 }
@@ -80,6 +77,7 @@ static void StartMod()
     }
     client::SetConfig(g_config);
     keep::Load(g_config.keepItems, g_config.keepKey);
+    keep::SetBinding(g_config.keepBinding);
     character::Init();
     bool keepShown = keep::Init();
     if (!keepShown)
@@ -92,12 +90,14 @@ static void StartMod()
     silhouette::Init();
     lang::SetOverride(g_config.language);
     chat::SetMode(g_config.chat);
-    hints::Init(g_config.doubleSortMs > 0,keepShown ? g_config.keepKey : 0);
+    g_keepHints = keepShown;
+    hints::Init(g_config.doubleSortMs > 0);
+    hints::SetKeep(keepShown ? g_config.keepBinding : greeneye::input::Binding{});
 #ifdef QD_BRIDGE
     bridge_ops::Register();
     bridge::Start(QD_VERSION "-dev");
 #endif
-    Log("ready: G twice in the inventory%s%s", g_config.doubleSortMs ? "" : " (off)", g_config.hotkey ? ", plus a hotkey" : "");
+    Log("ready: G twice in the inventory%s%s", g_config.doubleSortMs ? "" : " (off)", g_config.hotkey.Unbound() ? "" : ", plus a hotkey");
     StartHotkey();
 }
 

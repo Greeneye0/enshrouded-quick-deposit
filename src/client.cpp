@@ -1381,9 +1381,13 @@ void NoteKeptSpots()
 void RestoreKeptSpots()
 {
     constexpr ULONGLONG kSettledMs = 400, kGiveUpMs = 15000;
-    if (!g_unsort.count || g_run.phase != Phase::Idle || g_requested)
+    if (!g_unsort.count)
         return;
     ULONGLONG now = GetTickCount64();
+    if (g_run.phase != Phase::Idle || g_requested) {
+        g_unsort.sortedAt = now; // the give-up time starts when a deposit ends, however long it took
+        return;
+    }
     if (now - g_unsort.sortedAt > kGiveUpMs || g_unsort.moves > 2 * g_unsort.count) {
         Log("keep marks: %d kept stacks could not all go back after the sort", g_unsort.count);
         g_unsort.count = 0;
@@ -1667,13 +1671,15 @@ void UiDispatchHook(void* cl, uint8_t* cmd)
 #endif
     // Only sorts of your own inventory count: a chest's sort (T, or its sort button) is the same
     // command with the chest at +4, and two of those started deposits too.
-    if (cmd && cmd[0] == kCmdSortInventory && g_baseCfg.doubleSortMs > 0) {
+    if (cmd && cmd[0] == kCmdSortInventory) {
         const uint32_t sorted = At<uint32_t>(cmd, kCmdSortOwner);
         const uint32_t me = LocalPlayerId();
         ULONGLONG now = GetTickCount64();
         if (me && sorted == me && keep::Any())
-            NoteKeptSpots();
-        if (me && sorted != me) {
+            NoteKeptSpots(); // also with double-G off: kept stacks hold their slots either way
+        if (g_baseCfg.doubleSortMs <= 0) {
+            g_lastSort = 0;
+        } else if (me && sorted != me) {
             g_lastSort = 0;
         } else if (g_lastSort && now - g_lastSort <= static_cast<ULONGLONG>(g_baseCfg.doubleSortMs)) {
             g_lastSort = 0;

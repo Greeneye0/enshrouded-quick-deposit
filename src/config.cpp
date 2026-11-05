@@ -6,6 +6,7 @@
 #include <algorithm>
 #include "config.h"
 #include "inventory.h"
+#include "log.h"
 #include "../../common/greeneye.h"
 
 // quick-deposit.ini in the data folder: the game folder standalone, greeneye\quick-deposit\ under
@@ -26,7 +27,10 @@ static void WriteDefaults(const Config& c)
         "; Quick Deposit for Enshrouded\n"
         "; Press G (Sort Inventory) twice in your inventory to deposit.\n"
         "; doubleSortMs: how quickly the second G must follow (0 turns double-G off)\n"
-        "; hotkey: optional extra key, F1-F12 or a virtual-key code in hex (empty = none)\n"
+        "; hotkey: optional extra key to deposit (empty = none): a letter, digit, F1-F24, Mouse4, ...,\n"
+        ";   with Shift+, Ctrl+, Alt+ in front, or a key code like 0x76; a controller button goes after a\n"
+        ";   comma, Pad: and any of A B X Y LB RB LT RT LS RS View Menu Up Down Left Right joined with +\n"
+        ";   (e.g. F6, Pad:LB+A). On a controller, Sort Inventory twice deposits anyway.\n"
         "; delayMs: pause between chests (raise it if some chests get skipped on a laggy server)\n"
         "; settleMs: the longest wait for the server's changes before the next step and the report\n"
         "; tier2: off | dry | on - leftovers to a chest holding the same kind of item\n"
@@ -43,8 +47,9 @@ static void WriteDefaults(const Config& c)
         ";   never uses, comma-separated (e.g. My Stuff)\n"
         "; glowMs: how long the chests a deposit filled glow green after you close the inventory (0 = off)\n"
         "; keepKey: hover an item in your inventory and press it to keep that kind of item in the\n"
-        ";   backpack (teal border); press it again to unmark. A letter, F1-F12 or a key code in hex\n"
-        ";   (empty = off)\n"
+        ";   backpack (teal border); press it again to unmark. Same format as hotkey (empty = off);\n"
+        ";   with no Pad: part a controller's left stick click marks the selected slot. hotkey and keepKey\n"
+        ";   apply within two seconds, no restart needed.\n"
         "; keepItems: the kept items, comma-separated (keepKey writes it, e.g. Health Potion,Torch).\n"
         ";   Each character has its own list, in every world: [Keep.<character id>] keepItems. The\n"
         ";   list here is used until a character is known; the first character takes it over.\n"
@@ -64,7 +69,7 @@ static void WriteDefaults(const Config& c)
         "newItems=sort\n"
         "excludeChests=\n"
         "glowMs=%d\n"
-        "keepKey=K\n"
+        "keepKey=K, Pad:LS\n"
         "keepItems=\n"
         "language=auto\n"
         "chat=full\n",
@@ -88,7 +93,7 @@ static void AddMissingSettings(const Config& c)
         {"enabled", "1"},          {"doubleSortMs", num[0]},  {"hotkey", ""},
         {"delayMs", num[1]},       {"settleMs", num[2]},      {"tier2", "on"},
         {"tier2Categories", kDefaultCategories}, {"tier2Order", kDefaultOrder}, {"newItems", "sort"},
-        {"excludeChests", ""},     {"glowMs", glow},          {"keepKey", "K"},
+        {"excludeChests", ""},     {"glowMs", glow},          {"keepKey", "K, Pad:LS"},
         {"language", "auto"},      {"chat", "full"},
     };
     static char sections[8192];
@@ -108,6 +113,47 @@ static void AddMissingSettings(const Config& c)
         }
         WritePrivateProfileStringA("QuickDeposit", s[0], value, IniPath());
     }
+}
+
+static int ParseKey(const char* s, int fallback);
+
+// One key setting. A value only the older format knows (a key code without 0x) still counts.
+static greeneye::input::Binding ReadKey(const char* name, const char* written, const greeneye::input::Binding& fallback)
+{
+    using namespace greeneye::input;
+    char buf[128];
+    GetPrivateProfileStringA("QuickDeposit", name, written, buf, sizeof(buf), IniPath());
+    if (!buf[0])
+        return Binding{}; // empty: off
+    Binding out;
+    if (ParseBinding(buf, fallback, out))
+        return out;
+    out = fallback;
+    if (int vk = ParseKey(buf, 0)) {
+        out.keys[0] = KeyChord{uint8_t(vk)};
+        out.keyCount = 1;
+    } else {
+        Log("quickdeposit.ini: %s '%s' is not a key or button this mod knows", name, buf);
+    }
+    return out;
+}
+
+static void ReadKeys(Config& c)
+{
+    using namespace greeneye::input;
+    c.hotkey = ReadKey("hotkey", "", Binding{});
+    // Older ini files lack keepKey: as written for new ones.
+    c.keepBinding = ReadKey("keepKey", "K, Pad:LS", MakeBinding("K, Pad:LS"));
+    c.keepKey = c.keepBinding.keyCount ? c.keepBinding.keys[0].vk : 0;
+}
+
+bool RefreshKeys(Config& c)
+{
+    static greeneye::input::FileWatch watch;
+    if (!watch.Changed(IniPath()))
+        return false;
+    ReadKeys(c);
+    return true;
 }
 
 static int ParseKey(const char* s, int fallback)
@@ -193,8 +239,7 @@ Config LoadConfig()
 
     char buf[512];
     c.enabled = GetPrivateProfileIntA("QuickDeposit", "enabled", 1, IniPath()) != 0;
-    GetPrivateProfileStringA("QuickDeposit", "hotkey", "", buf, sizeof(buf), IniPath());
-    c.hotkey = ParseKey(buf, c.hotkey);
+    ReadKeys(c);
     c.doubleSortMs = ClampInt(GetPrivateProfileIntA("QuickDeposit", "doubleSortMs", c.doubleSortMs, IniPath()), 0, 2000, c.doubleSortMs);
     c.delayMs = ClampInt(GetPrivateProfileIntA("QuickDeposit", "delayMs", c.delayMs, IniPath()), 0, 2000, c.delayMs);
     c.settleMs = ClampInt(GetPrivateProfileIntA("QuickDeposit", "settleMs", c.settleMs, IniPath()), 200, 10000, c.settleMs);
@@ -212,9 +257,6 @@ Config LoadConfig()
     c.newItemsStay = _stricmp(buf, "stay") == 0;
     GetPrivateProfileStringA("QuickDeposit", "excludeChests", "", c.excludeChests, sizeof(c.excludeChests), IniPath());
     c.glowMs = ClampInt(GetPrivateProfileIntA("QuickDeposit", "glowMs", c.glowMs, IniPath()), 0, 60000, c.glowMs);
-    // Older ini files lack keepKey: K, as written for new ones.
-    GetPrivateProfileStringA("QuickDeposit", "keepKey", "K", buf, sizeof(buf), IniPath());
-    c.keepKey = buf[0] ? ParseKey(buf, 0) : 0;
     GetPrivateProfileStringA("QuickDeposit", "keepItems", "", c.keepItems, sizeof(c.keepItems), IniPath());
     GetPrivateProfileStringA("QuickDeposit", "language", "auto", c.language, sizeof(c.language), IniPath());
     GetPrivateProfileStringA("QuickDeposit", "chat", "full", buf, sizeof(buf), IniPath());

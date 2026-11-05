@@ -66,7 +66,8 @@ Hover a stack in your inventory and press **K**. Kept stacks get a teal border.
   you: sold, salvaged or put into a chest. Gear in your grave after a death stays marked.
 
 The kept amount survives sorting: when G merges your stacks, a deposit splits off just the
-rest. Your chat ends with what stayed ("Kept (marked): Straw x50"). The hint bar at the bottom
+rest. Kept stacks also hold their slots: right after G sorts your backpack they move back to where
+they were, so an order of spells or arrows stays, and everything else stays sorted. Your chat ends with what stayed ("Kept (marked): Straw x50"). The hint bar at the bottom
 shows **K Keep in Backpack** and **G Twice: Quick Deposit**.
 
 Each of your characters has its own marks, the same in every world: Quick Deposit knows which
@@ -104,7 +105,7 @@ The chests a station fills glow green too.
 ## Install
 
 1. Close Enshrouded.
-2. Download `QuickDeposit-1.3.21.zip` from [Releases](../../releases/latest) or
+2. Download `QuickDeposit-1.3.22.zip` from [Releases](../../releases/latest) or
    [Nexus Mods](https://www.nexusmods.com/enshrouded/mods/195).
 3. In Steam: right-click Enshrouded > Manage > Browse local files.
 4. Copy everything from the zip into that folder, keeping the folders: `dbgcore.dll` (the
@@ -128,7 +129,7 @@ edit it while the game is closed.
 |---|---|---|
 | `enabled` | `1` | `0` turns the mod off |
 | `doubleSortMs` | `500` | how quickly the second G must follow; `0` turns double-G off |
-| `hotkey` | (none) | optional extra key: `F1`-`F12` or a virtual-key code such as `0x76` |
+| `hotkey` | (none) | optional extra key: a letter, digit, `F1`-`F24`, `Mouse4`..., with `Shift+`, `Ctrl+`, `Alt+`, or a code such as `0x76`; a controller button after a comma: `F6, Pad:LB+A` |
 | `delayMs` | `100` | pause between chest commands (the host takes about one per network tick); each retry pass also waits this much longer than the last. Raise it if chests get skipped on a laggy server |
 | `settleMs` | `1500` | the longest wait for the server's changes before the next step and the report (it moves on as soon as your backpack stops changing) |
 | `tier2` | `on` | `on`, `dry` (only report the plan) or `off` (only "Deposit Stacks") |
@@ -138,7 +139,7 @@ edit it while the game is closed.
 | `newItems` | `sort` | `stay` leaves items no chest holds yet in the backpack |
 | `chat` | `full` | the deposit report in your chat: `full` (every chest and what stayed), `short` (one summary line) or `off`; the report file always has everything |
 | `glowMs` | `10000` | how long the chests a deposit filled glow green after you close the inventory; `0` turns it off |
-| `keepKey` | `K` | over a stack in your inventory: keep it in the backpack; a letter, `F1`-`F12` or a key code; empty turns it off |
+| `keepKey` | `K, Pad:LS` | over a stack in your inventory: keep it in the backpack; same format as `hotkey`; on a controller it marks the selected slot; empty turns it off |
 | `keepItems` | (none) | what K marked, e.g. `Straw x50,Torch` (no amount: every one); one list per character, under `[Keep.<character id>]` |
 | `language` | `auto` | the language of the key hints and chat lines (the report file stays English): `auto` follows the game, or `english`, `german`, `french`, `italian`, `spanish`, `brazilian`, `polish`, `russian`, `ukrainian`, `turkish`, `japanese`, `koreana`, `schinese`, `tchinese`, `thai` |
 

@@ -1,4 +1,5 @@
 #pragma once
+#include "../../common/input_binds.h"
 #include <cstdint>
 #include "chat.h"
 
@@ -11,7 +12,8 @@ constexpr int kTier2Rules = 5;
 struct Config
 {
     bool enabled = true;
-    int hotkey = 0;          // optional extra hotkey (virtual-key code); 0 = none
+    greeneye::input::Binding hotkey;     // optional extra key or button to deposit; unbound = none
+    greeneye::input::Binding keepBinding; // keep mark: see keepKey
     int doubleSortMs = 500;  // G twice within this time in the inventory deposits; 0 = off
     int delayMs = 100;   // pause between chest commands: the host takes about one per network tick
     int settleMs = 1500; // wait for the host's changes to reach this client before reading again
@@ -36,3 +38,6 @@ Config LoadConfig();
 
 // tier2Order's rule names (item, kind, name, weapons, nearest) into c; none known: no change.
 void ParseTier2Order(const char* list, Config& c);
+
+// Reads hotkey and keepKey again when the ini changed (checked at most every 2 s); true if it did.
+bool RefreshKeys(Config& c);
