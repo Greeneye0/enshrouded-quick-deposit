@@ -1138,6 +1138,18 @@ bool BackpackShown()
     return !g_lastFrame.empty() || !g_thisFrame.empty();
 }
 
+bool OverBackpackSlot(bool pad)
+{
+    float x = 0, y = 0;
+    const bool cursor = !pad && CursorInUi(x, y);
+    std::lock_guard<std::mutex> lock(g_slotsLock);
+    for (const SlotSeen& s : g_lastFrame)
+        if (pad ? s.selected
+                : cursor && x >= s.rect[0] && x < s.rect[0] + s.rect[2] && y >= s.rect[1] && y < s.rect[1] + s.rect[3])
+            return true;
+    return false;
+}
+
 std::vector<SlotSeen> LastFrameSlots()
 {
     std::lock_guard<std::mutex> lock(g_slotsLock);

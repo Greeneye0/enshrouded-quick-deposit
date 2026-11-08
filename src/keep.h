@@ -79,6 +79,10 @@ bool ChestShown();
 // Once per UI frame (game thread): handles keepKey over a hovered slot.
 void Tick();
 
+// True while the mouse (pad: the controller's selection) is on an item in your backpack's storage
+// rows, not the hotbar, the weapon bars or a chest.
+bool OverBackpackSlot(bool pad);
+
 // --- for the dev bridge ---
 
 struct SlotSeen {

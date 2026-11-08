@@ -193,6 +193,9 @@ void HintsBody(Span* span, void* options)
     usable = usable && (now - g_sortDrawnAt <= kScreenStaleMs || keep::ChestShown());
     int copy = sort >= 0 ? sort : usable ? TemplateEntry(span) : -1;
     const bool padInUse = greeneye::hints::PadInUse();
+    // An item card's bar (no Sort in it): only for items in your backpack, not the bars or a chest.
+    if (sort < 0 && copy >= 0 && !keep::OverBackpackSlot(padInUse))
+        copy = -1;
     const greeneye::input::Binding keepBinding = g_keep.Get();
     const bool showKeep = greeneye::hints::ShowsOn(keepBinding, padInUse);
     // The deposit hint: on a controller only beside the game's Sort, whose button it copies
