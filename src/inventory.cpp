@@ -50,6 +50,8 @@ constexpr uint32_t kFirstNonPlayerId = 0x400; // player entities use ids 1..0x3f
 uint16_t g_typeInventory = 283; // detected on your own pages (DetectInventoryType)
 uint16_t g_typePosition = 133;  // detected on your own entity (DetectPosition)
 bool g_positionFound = false;
+bool g_typesChanged = false;   // RecheckTypes changed a type since TypesChanged() last asked
+bool g_inventoryFound = false; // DetectInventoryType found it (it needs items the item database knows)
 uint16_t g_typeSetup = 0;  // detected
 uint16_t g_typeHotbar = 0; // detected: player component with the hotbar page ids at +0xa0/+0xa4
 // Position (inventory.h TypePosition): int64 x, y, z with 32 fraction bits (build 1269579)
@@ -236,6 +238,7 @@ bool DetectInventoryType(void* registry, uint32_t playerId)
     if (best != g_typeInventory)
         Log("Inventory type %d (not %u)", best, g_typeInventory);
     g_typeInventory = static_cast<uint16_t>(best);
+    g_inventoryFound = true;
     return true;
 }
 
@@ -261,6 +264,49 @@ uint16_t DetectSetupType(void* registry, uint32_t chest)
         } __except (EXCEPTION_EXECUTE_HANDLER) {
             score = 0;
         }
+        if (score > bestScore) {
+            bestScore = score;
+            best = types[i];
+        }
+    }
+    return best;
+}
+
+// Whether the player's component of this type links the player itself as its equipment page (kind
+// 2): every character's InventorySetup does ("1:kind2" in the deposit log).
+bool LinksOwnEquipment(void* registry, uint16_t type, uint32_t playerId)
+{
+    auto* data = static_cast<uint32_t*>(Component(registry, type, playerId));
+    uint32_t ids[kMaxPages] = {};
+    uint8_t kinds[kMaxPages] = {};
+    if (!data || !CopyLinks(data, ids, kinds))
+        return false;
+    for (int k = 0; k < kMaxPages; ++k)
+        if (ids[k] == playerId && kinds[k] == static_cast<uint8_t>(PageKind::Equipment))
+            return true;
+    return false;
+}
+
+// The InventorySetup type told on your own entity: of the components linking you as your
+// equipment page, the one with the most linked pages that hold an inventory.
+uint16_t DetectPlayerSetupType(void* registry, uint32_t playerId)
+{
+    uint16_t types[kComponentBits];
+    int n = EntityTypes(registry, playerId, types, kComponentBits);
+    uint16_t best = 0;
+    int bestScore = -1;
+    for (int i = 0; i < n; ++i) {
+        if (!LinksOwnEquipment(registry, types[i], playerId))
+            continue;
+        auto* data = static_cast<uint32_t*>(Component(registry, types[i], playerId));
+        uint32_t ids[kMaxPages] = {};
+        uint8_t kinds[kMaxPages] = {};
+        if (!CopyLinks(data, ids, kinds))
+            continue;
+        int score = 0;
+        for (int k = 0; k < kMaxPages; ++k)
+            if (ids[k] >= kFirstNonPlayerId && kinds[k] >= 1 && kinds[k] <= 5 && Component(registry, g_typeInventory, ids[k]))
+                ++score;
         if (score > bestScore) {
             bestScore = score;
             best = types[i];
@@ -482,10 +528,47 @@ bool Init()
     return true;
 }
 
+// The registry was identified before the item database knew any of your items, so the Inventory
+// type is still the plain game's guess, and the InventorySetup type was scored with it: try both
+// again (at most every 2 s) until your pages read. A wrong guess left only your own page readable,
+// as kind 0 (ramabbott's and OddlySpecifik's logs, 1.3.23 and 1.3.24).
+void RecheckTypes(uint32_t playerId, uint32_t probeChest)
+{
+    static ULONGLONG lastTry = 0;
+    const ULONGLONG now = GetTickCount64();
+    if (!playerId || now - lastTry < 2000)
+        return;
+    const bool setupOk = LinksOwnEquipment(g_registry, g_typeSetup, playerId);
+    if (g_inventoryFound && setupOk)
+        return;
+    lastTry = now;
+    // The type told on a chest may not be the one your character carries it in (ramabbott's
+    // character read as one page of kind 0 while chests read fine): tell it on you instead.
+    if (!setupOk) {
+        if (uint16_t setup = DetectPlayerSetupType(g_registry, playerId); setup && setup != g_typeSetup) {
+            Log("InventorySetup type %u (not %u), told on your character", setup, g_typeSetup);
+            g_typeSetup = setup;
+            g_typesChanged = true;
+        }
+    }
+    if (g_inventoryFound)
+        return;
+    const uint16_t before = g_typeInventory;
+    if (!DetectInventoryType(g_registry, playerId) || g_typeInventory == before)
+        return;
+    g_typesChanged = true;
+    if (uint16_t setup = DetectSetupType(g_registry, probeChest ? probeChest : playerId); setup && setup != g_typeSetup) {
+        Log("InventorySetup type %u (not %u)", setup, g_typeSetup);
+        g_typeSetup = setup;
+    }
+}
+
 bool Ready(uint32_t playerId, uint32_t probeChest)
 {
-    if (g_registry && g_typeSetup)
+    if (g_registry && g_typeSetup) {
+        RecheckTypes(playerId, probeChest);
         return true;
+    }
     int seen = 0;
     for (auto& slot : g_seen) {
         void* reg = slot.load();
@@ -1225,6 +1308,7 @@ void Forget()
     g_typeSetup = 0;
     g_typeHotbar = 0;
     g_positionFound = false; // types are numbered per session
+    g_inventoryFound = false;
     for (auto& slot : g_seen)
         slot.store(nullptr);
     Log("left the world: client registry forgotten");
@@ -1239,6 +1323,13 @@ void UseKept(const GreeneyeHost* host)
 void* UiState()
 {
     return g_uiState.load();
+}
+
+bool TypesChanged()
+{
+    const bool changed = g_typesChanged;
+    g_typesChanged = false;
+    return changed;
 }
 
 uint16_t TypePosition()

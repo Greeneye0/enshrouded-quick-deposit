@@ -1319,7 +1319,8 @@ void UpdateBackpackPages()
     static ULONGLONG lastIdentify = 0;
     uint32_t handle = g_client && At<void*>(g_client, kClientWorld) ? At<uint32_t>(g_client, kClientPlayer) : 0;
     uint32_t playerId = handle ? (handle & 0x3f) + 1 : 0;
-    if (playerId && !inv::ReadOwner(playerId, me) && now - lastIdentify >= 5000) {
+    const bool read = playerId && inv::ReadOwner(playerId, me);
+    if (playerId && !read && now - lastIdentify >= 5000) {
         // After a game start nothing has identified the client registry yet (a deposit does):
         // the way a deposit does in a base (a chest tells the registries apart), else by the
         // registry where your own pages have inventories.
@@ -1328,6 +1329,9 @@ void UpdateBackpackPages()
         std::string why;
         if (!ScanBase(g_client, g_baseCfg, scan, why) || !scan.readable)
             inv::Ready(playerId, playerId);
+        inv::ReadOwner(playerId, me);
+    } else if (read && inv::Ready(playerId, playerId) && inv::TypesChanged()) {
+        // Identified before the item database knew your items: read again with the found types.
         inv::ReadOwner(playerId, me);
     }
     if (!playerId)

@@ -17,6 +17,9 @@ constexpr int kMaxPages = 16;
 // type numbers shift when other mods add components (EML Tweaks put InventorySetup at 133), so it
 // is detected on the local player (DetectPosition); 133 until then.
 uint16_t TypePosition();
+// True once after Ready() found that the Inventory (and so InventorySetup) type it guessed at first
+// was wrong: owners read before then are worth reading again.
+bool TypesChanged();
 // Finds the Position type: the component of your own entity that holds where the game says you
 // are. Call with your position in meters (the world's copy); cheap once found.
 void DetectPosition(uint32_t playerId, const float pos[3]);
