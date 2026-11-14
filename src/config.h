@@ -30,6 +30,7 @@ struct Config
     char keepItems[2048] = "";    // comma-separated kept item names (written by keepKey)
     char language[32] = "auto";   // hints' and chat's language: auto (the game's) or a Steam language code
     chat::Mode chat = chat::Mode::Full; // deposit reports in chat: full, short (one line) or off
+    bool noFun = false;           // noFun=true: no jokes or surprises
 };
 
 // Reads quick-deposit.ini from the data folder (greeneye\quick-deposit\ under the Greeneye

@@ -13,7 +13,13 @@ namespace inv {
 
 constexpr int kSlotsPerPage = 8;
 constexpr int kMaxPages = 16;
-constexpr uint16_t kTypePosition = 133; // the Position component: int64 x, y, z with 32 fraction bits
+// The Position component's type: int64 x, y, z with 32 fraction bits. 133 in the plain game, but
+// type numbers shift when other mods add components (EML Tweaks put InventorySetup at 133), so it
+// is detected on the local player (DetectPosition); 133 until then.
+uint16_t TypePosition();
+// Finds the Position type: the component of your own entity that holds where the game says you
+// are. Call with your position in meters (the world's copy); cheap once found.
+void DetectPosition(uint32_t playerId, const float pos[3]);
 
 // InventoryCategory of a page link
 enum class PageKind : uint8_t { Invalid = 0, Customization = 1, Equipment = 2, Currency = 3, Generic = 4, Virtual = 5 };

@@ -309,4 +309,31 @@ bool Tracking()
     return g_load.found || !g_dirs.empty();
 }
 
+std::wstring NewestSave()
+{
+    if (g_dirs.empty())
+        FindDirs(); // the save manager told the character, so the folders weren't needed yet
+    std::wstring newest;
+    ULONGLONG newestAt = 0;
+    for (const std::wstring& dir : g_dirs) {
+        WIN32_FIND_DATAW fd;
+        HANDLE h = FindFirstFileW((dir + L"\\character*.ksd").c_str(), &fd);
+        if (h == INVALID_HANDLE_VALUE)
+            continue;
+        do {
+            const wchar_t* name = fd.cFileName;
+            size_t len = wcslen(name);
+            if (len < 14 || _wcsicmp(name + len - 4, L".ksd") != 0)
+                continue;
+            ULONGLONG at = Number(fd.ftLastWriteTime);
+            if (at > newestAt) {
+                newestAt = at;
+                newest = dir + L"\\" + name;
+            }
+        } while (FindNextFileW(h, &fd));
+        FindClose(h);
+    }
+    return newest;
+}
+
 } // namespace character

@@ -57,6 +57,7 @@ static void WriteDefaults(const Config& c)
         ";   russian, ukrainian, turkish, japanese, koreana, schinese, tchinese, thai\n"
         "; chat: full | short | off - deposit reports in your chat: every chest, one summary line, or\n"
         ";   none (only you see them; the report file always has everything)\n"
+        "; noFun: true turns off jokes and surprises\n"
         "[QuickDeposit]\n"
         "enabled=1\n"
         "doubleSortMs=%d\n"
@@ -72,7 +73,8 @@ static void WriteDefaults(const Config& c)
         "keepKey=K, Pad:LS\n"
         "keepItems=\n"
         "language=auto\n"
-        "chat=full\n",
+        "chat=full\n"
+        "noFun=false\n",
         c.doubleSortMs, c.delayMs, c.settleMs, kDefaultCategories, kDefaultOrder, c.glowMs);
     fclose(f);
 }
@@ -94,7 +96,7 @@ static void AddMissingSettings(const Config& c)
         {"delayMs", num[1]},       {"settleMs", num[2]},      {"tier2", "on"},
         {"tier2Categories", kDefaultCategories}, {"tier2Order", kDefaultOrder}, {"newItems", "sort"},
         {"excludeChests", ""},     {"glowMs", glow},          {"keepKey", "K, Pad:LS"},
-        {"language", "auto"},      {"chat", "full"},
+        {"language", "auto"},      {"chat", "full"},          {"noFun", "false"},
     };
     static char sections[8192];
     DWORD len = GetPrivateProfileSectionNamesA(sections, sizeof(sections), IniPath());
@@ -257,6 +259,11 @@ Config LoadConfig()
     c.newItemsStay = _stricmp(buf, "stay") == 0;
     GetPrivateProfileStringA("QuickDeposit", "excludeChests", "", c.excludeChests, sizeof(c.excludeChests), IniPath());
     c.glowMs = ClampInt(GetPrivateProfileIntA("QuickDeposit", "glowMs", c.glowMs, IniPath()), 0, 60000, c.glowMs);
+    {
+        char fun[16];
+        GetPrivateProfileStringA("QuickDeposit", "noFun", "false", fun, sizeof(fun), IniPath());
+        c.noFun = _stricmp(fun, "true") == 0 || strcmp(fun, "1") == 0;
+    }
     GetPrivateProfileStringA("QuickDeposit", "keepItems", "", c.keepItems, sizeof(c.keepItems), IniPath());
     GetPrivateProfileStringA("QuickDeposit", "language", "auto", c.language, sizeof(c.language), IniPath());
     GetPrivateProfileStringA("QuickDeposit", "chat", "full", buf, sizeof(buf), IniPath());

@@ -46,10 +46,13 @@ GetEntityComponentFn getEntityComponent = nullptr;
 
 constexpr int kComponentBits = 640;
 constexpr uint32_t kFirstNonPlayerId = 0x400; // player entities use ids 1..0x3ff
-uint16_t g_typeInventory = 283;
+// Type numbers: the plain game's until detected (they shift when other mods add components).
+uint16_t g_typeInventory = 283; // detected on your own pages (DetectInventoryType)
+uint16_t g_typePosition = 133;  // detected on your own entity (DetectPosition)
+bool g_positionFound = false;
 uint16_t g_typeSetup = 0;  // detected
 uint16_t g_typeHotbar = 0; // detected: player component with the hotbar page ids at +0xa0/+0xa4
-// kTypePosition (inventory.h): int64 x, y, z with 32 fraction bits (build 1269579)
+// Position (inventory.h TypePosition): int64 x, y, z with 32 fraction bits (build 1269579)
 constexpr size_t kHotbarPageA = 0xa0;
 constexpr size_t kHotbarPageB = 0xa4;
 
@@ -160,6 +163,82 @@ int EntityTypes(void* registry, uint32_t entity, uint16_t* out, int max)
 }
 
 // Of the chest's types, the one whose first 16 ids are entities with an Inventory.
+// A component's first 16 u32 (page links) and the 16 bytes at +64 (their kinds).
+bool CopyLinks(const uint32_t* data, uint32_t* ids, uint8_t* kinds)
+{
+    __try {
+        memcpy(ids, data, kMaxPages * sizeof(uint32_t));
+        memcpy(kinds, reinterpret_cast<const uint8_t*>(data) + 64, kMaxPages);
+    } __except (EXCEPTION_EXECUTE_HANDLER) {
+        return false;
+    }
+    return true;
+}
+
+// How much a component looks like a page's Inventory: 8 stacks {item id, count, ...}, each empty
+// or a known item with a count it can stack to. -1: it can't be one; else the items in it.
+int StacksScore(const uint8_t* data)
+{
+    Stack slots[kSlotsPerPage];
+    __try {
+        memcpy(slots, data, sizeof(slots));
+    } __except (EXCEPTION_EXECUTE_HANDLER) {
+        return -1;
+    }
+    int items = 0;
+    for (const Stack& st : slots) {
+        if (!st.count)
+            continue;
+        ItemDesc d = Describe(st.itemId);
+        if (!d.known || !d.maxStack || st.count > d.maxStack)
+            return -1;
+        ++items;
+    }
+    return items;
+}
+
+// The Inventory type, from your own pages (they hold items, unlike a new chest's): every
+// component of yours linking pages (a valid kind at +64), and on each linked page the component
+// that reads as item stacks. False (the old type kept) when nothing in your pages is known yet.
+bool DetectInventoryType(void* registry, uint32_t playerId)
+{
+    uint16_t types[kComponentBits];
+    int n = EntityTypes(registry, playerId, types, kComponentBits);
+    static int score[kComponentBits];
+    memset(score, 0, sizeof(score));
+    for (int i = 0; i < n; ++i) {
+        auto* links = static_cast<uint32_t*>(Component(registry, types[i], playerId));
+        if (!links)
+            continue;
+        uint32_t ids[kMaxPages] = {};
+        uint8_t kinds[kMaxPages] = {};
+        if (!CopyLinks(links, ids, kinds))
+            continue;
+        for (int k = 0; k < kMaxPages; ++k) {
+            if (!ids[k] || kinds[k] < 1 || kinds[k] > 5)
+                continue;
+            uint16_t pageTypes[kComponentBits];
+            int m = EntityTypes(registry, ids[k], pageTypes, kComponentBits);
+            for (int j = 0; j < m; ++j)
+                if (auto* data = static_cast<uint8_t*>(Component(registry, pageTypes[j], ids[k]))) {
+                    int s = StacksScore(data);
+                    if (s > 0)
+                        score[pageTypes[j]] += s;
+                }
+        }
+    }
+    int best = -1;
+    for (int type = 0; type < kComponentBits; ++type)
+        if (score[type] && (best < 0 || score[type] > score[best]))
+            best = type;
+    if (best < 0)
+        return false;
+    if (best != g_typeInventory)
+        Log("Inventory type %d (not %u)", best, g_typeInventory);
+    g_typeInventory = static_cast<uint16_t>(best);
+    return true;
+}
+
 uint16_t DetectSetupType(void* registry, uint32_t chest)
 {
     uint16_t types[kComponentBits];
@@ -416,6 +495,7 @@ bool Ready(uint32_t playerId, uint32_t probeChest)
         uint16_t tmp[1];
         if (EntityTypes(reg, playerId, tmp, 1) < 0 || EntityTypes(reg, probeChest, tmp, 1) < 0)
             continue;
+        DetectInventoryType(reg, playerId);
         uint16_t setup = DetectSetupType(reg, probeChest);
         if (!setup)
             continue;
@@ -569,7 +649,7 @@ int WalkEntities(void* registry, const uint16_t* need, int needCount, const floa
                 all = bits[need[k] >> 6] >> (need[k] & 63) & 1;
             if (!all)
                 continue;
-            auto* pos = static_cast<int64_t*>(Component(registry, kTypePosition, id));
+            auto* pos = static_cast<int64_t*>(Component(registry, g_typePosition, id));
             if (!pos)
                 continue;
             float p[3] = {pos[0] / 4294967296.0f, pos[1] / 4294967296.0f, pos[2] / 4294967296.0f};
@@ -587,7 +667,7 @@ int FindContainers(const float lo[3], const float hi[3], uint32_t* out, int max)
 {
     if (!g_registry || !g_typeSetup)
         return 0;
-    const uint16_t need[] = {g_typeSetup, kTypePosition};
+    const uint16_t need[] = {g_typeSetup, g_typePosition};
     int scanned = 0;
     int n = WalkEntities(g_registry, need, 2, lo, hi, out, max, scanned);
     static int lastN = -1; // FindContainers runs on every bridge status call; log changes only
@@ -607,6 +687,7 @@ int FindPlainChests(uint32_t playerId, const float lo[3], const float hi[3], uin
             uint16_t tmp[1];
             if (!reg || EntityTypes(reg, playerId, tmp, 1) < 0)
                 continue;
+            DetectInventoryType(reg, playerId);
             if (uint16_t setup = DetectSetupType(reg, playerId)) {
                 g_registry = reg;
                 g_typeSetup = setup;
@@ -732,7 +813,7 @@ bool Position(uint32_t entity, float out[3])
 {
     if (!g_registry)
         return false;
-    auto* p = static_cast<int64_t*>(Component(g_registry, kTypePosition, entity));
+    auto* p = static_cast<int64_t*>(Component(g_registry, g_typePosition, entity));
     if (!p)
         return false;
     __try {
@@ -1105,9 +1186,9 @@ int EntitiesNear(void* registry, const float center[3], float radius, uint32_t* 
             if (!rec || id < kFirstNonPlayerId)
                 continue;
             auto* bits = *reinterpret_cast<uint64_t**>(rec + 0x18);
-            if (!(bits[kTypePosition >> 6] >> (kTypePosition & 63) & 1))
+            if (!(bits[g_typePosition >> 6] >> (g_typePosition & 63) & 1))
                 continue;
-            auto* pos = static_cast<int64_t*>(Component(registry, kTypePosition, id));
+            auto* pos = static_cast<int64_t*>(Component(registry, g_typePosition, id));
             if (!pos)
                 continue;
             float dx = pos[0] / 4294967296.0f - center[0], dy = pos[1] / 4294967296.0f - center[1],
@@ -1143,6 +1224,7 @@ void Forget()
     g_registry = nullptr;
     g_typeSetup = 0;
     g_typeHotbar = 0;
+    g_positionFound = false; // types are numbered per session
     for (auto& slot : g_seen)
         slot.store(nullptr);
     Log("left the world: client registry forgotten");
@@ -1157,6 +1239,88 @@ void UseKept(const GreeneyeHost* host)
 void* UiState()
 {
     return g_uiState.load();
+}
+
+uint16_t TypePosition()
+{
+    return g_typePosition;
+}
+
+namespace {
+
+// Whether the entity's component of this type holds pos (meters, within 2 m).
+bool HoldsPosition(uint16_t type, uint32_t entity, const float pos[3])
+{
+    auto* p = static_cast<int64_t*>(Component(g_registry, type, entity));
+    if (!p)
+        return false;
+    int64_t v[3];
+    __try {
+        memcpy(v, p, sizeof(v));
+    } __except (EXCEPTION_EXECUTE_HANDLER) {
+        return false;
+    }
+    for (int i = 0; i < 3; ++i)
+        if (std::fabs(static_cast<double>(v[i]) / 4294967296.0 - pos[i]) > 2.0)
+            return false;
+    return true;
+}
+
+// How many non-player entities carry each of the types (one walk of the entity table).
+void CountCarriers(void* registry, const uint16_t* types, int n, int* counts)
+{
+    auto* reg = static_cast<uint8_t*>(registry);
+    uint8_t* map = reg + 0x148;
+    __try {
+        uint64_t capacity = *reinterpret_cast<uint64_t*>(map + 0x10);
+        auto* used = *reinterpret_cast<uint64_t**>(map + 0x08);
+        auto* ids = *reinterpret_cast<uint32_t**>(map + 0x28);
+        auto* records = *reinterpret_cast<uint8_t***>(reg + 0x188);
+        if (capacity > (1u << 22))
+            return;
+        for (uint64_t i = 0; i < capacity; ++i) {
+            if (!(used[i >> 6] >> (i & 63) & 1))
+                continue;
+            uint8_t* rec = records[i];
+            if (!rec || ids[i] < kFirstNonPlayerId)
+                continue;
+            auto* bits = *reinterpret_cast<uint64_t**>(rec + 0x18);
+            for (int k = 0; k < n; ++k)
+                counts[k] += bits[types[k] >> 6] >> (types[k] & 63) & 1;
+        }
+    } __except (EXCEPTION_EXECUTE_HANDLER) {
+    }
+}
+
+} // namespace
+
+void DetectPosition(uint32_t playerId, const float pos[3])
+{
+    if (g_positionFound || !g_registry || !playerId)
+        return;
+    // More than one of your components holds where you stand (one is yours alone), so of those the
+    // one most other entities carry: chests, stations and props all have a Position.
+    uint16_t types[kComponentBits];
+    int n = EntityTypes(g_registry, playerId, types, kComponentBits);
+    uint16_t match[kComponentBits];
+    int m = 0;
+    for (int i = 0; i < n; ++i)
+        if (HoldsPosition(types[i], playerId, pos))
+            match[m++] = types[i];
+    if (!m)
+        return; // not where expected yet; the default stays and the next search tries again
+    int counts[kComponentBits] = {};
+    CountCarriers(g_registry, match, m, counts);
+    int best = 0;
+    for (int k = 1; k < m; ++k)
+        if (counts[k] > counts[best])
+            best = k;
+    if (!counts[best])
+        return;
+    if (match[best] != g_typePosition)
+        Log("Position type %u (not %u), on %d entities", match[best], g_typePosition, counts[best]);
+    g_typePosition = match[best];
+    g_positionFound = true;
 }
 
 } // namespace inv

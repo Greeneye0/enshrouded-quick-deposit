@@ -332,6 +332,7 @@ bool ScanBase(void* cl, const Config& cfg, BaseScan& out, std::string& why)
     }
     for (int i = 0; i < 3; ++i)
         out.pos[i] = static_cast<float>(At<int64_t>(world, kWorldPlayerPos + 8 * i)) * kFixedToMeters;
+    inv::DetectPosition(out.playerId, out.pos); // once the registry is known; before containers go by position
 
     uint32_t baseCount = At<uint32_t>(reg, kRegBaseCount);
     for (uint32_t b = 0; b < baseCount && b < 1024 && !out.base; ++b) {

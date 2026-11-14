@@ -38,4 +38,7 @@ bool InWorld();
 bool Ready();
 bool Tracking();
 
+// The character save written last (characterN.ksd, the one being played), "" if none was found.
+std::wstring NewestSave();
+
 } // namespace character

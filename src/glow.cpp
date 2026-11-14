@@ -170,7 +170,7 @@ void Restore(unsigned i)
 
 bool SamePlace(void* registry, uint32_t entity, const float* position)
 {
-    auto pos = static_cast<const int64_t*>(inv::Data(registry, inv::kTypePosition, entity));
+    auto pos = static_cast<const int64_t*>(inv::Data(registry, inv::TypePosition(), entity));
     if (!pos)
         return false;
     for (int j = 0; j < 3; ++j)

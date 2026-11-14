@@ -27,6 +27,7 @@
 #include "lang.h"
 #include "log.h"
 #include "scan.h"
+#include "voiceline.h"
 
 namespace keep {
 namespace {
@@ -270,9 +271,12 @@ bool CursorInUi(float& x, float& y)
     POINT cursor{};
     RECT client{};
     if (!GetCursorPos(&cursor) || !ScreenToClient(foreground, &cursor) || !GetClientRect(foreground, &client) ||
-        client.bottom <= 0)
+        client.right <= 0 || client.bottom <= 0)
         return false;
-    float scale = 1080.0f / static_cast<float>(client.bottom);
+    // The UI is at least 1920 x 1080 units, the other side as the window's aspect makes it: 3840 x 1080
+    // at 5120 x 1440 pixels, 1920 x 1200 at 2560 x 1600 (1080 high there put the cursor 10% off, and
+    // keepKey missed most slots). As Find's ui.cpp does.
+    float scale = (std::max)(1920.0f / static_cast<float>(client.right), 1080.0f / static_cast<float>(client.bottom));
     x = cursor.x * scale;
     y = cursor.y * scale;
     return true;
@@ -1097,6 +1101,7 @@ void Tick()
             memcpy(&count, s.data + 0x10, sizeof(count));
             uint64_t key = static_cast<uint64_t>(*reinterpret_cast<const uint32_t*>(s.data)) << 8 | s.data[4];
             ToggleStack(s.itemId, count, KeptHere(key), key);
+            voiceline::Pressed(s.itemId);
             break;
         }
     }
@@ -1121,6 +1126,7 @@ void Tick()
             memcpy(&count, s.data + 0x10, sizeof(count));
             uint64_t key = static_cast<uint64_t>(*reinterpret_cast<const uint32_t*>(s.data)) << 8 | s.data[4];
             ToggleStack(s.itemId, count, KeptHere(key), key);
+            voiceline::Pressed(s.itemId);
             return;
         }
     }

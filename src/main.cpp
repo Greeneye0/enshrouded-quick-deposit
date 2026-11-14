@@ -1,5 +1,6 @@
 #include <windows.h>
 #include <atomic>
+#include "voiceline.h"
 #include "character.h"
 #include "chat.h"
 #include "client.h"
@@ -19,7 +20,7 @@
 namespace bridge_ops { void Register(); }
 #endif
 
-#define QD_VERSION "1.3.23"
+#define QD_VERSION "1.3.24"
 
 bool LoadProxyTargets();
 
@@ -78,6 +79,7 @@ static void StartMod()
     client::SetConfig(g_config);
     keep::Load(g_config.keepItems, g_config.keepKey);
     keep::SetBinding(g_config.keepBinding);
+    voiceline::SetEnabled(!g_config.noFun);
     character::Init();
     bool keepShown = keep::Init();
     if (!keepShown)
