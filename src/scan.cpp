@@ -201,9 +201,30 @@ void* InstallItemLookupHook(uint8_t* fn, void* detour)
         // "jnz" over a jump to the jz target (taken when ecx was 0) to that jump back.
         uint8_t original[12];
         host->read(fn, original, sizeof(original));
-        if (memcmp(original, prologue, sizeof(prologue)) != 0)
+        // Another mod may have hooked this function first: Kiln's ItemRegistryFind IS
+        // ItemInfoLookup, and host->read shows that mod's jump, not the prologue (the
+        // loader only reverts its own hooks). FindUnique already identified the function,
+        // behind the jump if needed, and host->hook chains onto a recognized jump — so a
+        // hook patch here is a chain, not a failure. The jz displacement is read from
+        // behind the jump when visible; the trampoline code below is unused when the
+        // loader chains, so a covered displacement (0) is harmless there.
+        int8_t jzDisp = 0;
+        if (memcmp(original, prologue, sizeof(prologue)) == 0) {
+            jzDisp = static_cast<int8_t>(original[11]);
+        } else if (jumppatch::Kind kind = jumppatch::KindOf(original); kind != jumppatch::None) {
+            size_t i = jumppatch::Length(kind);
+            while (i < sizeof(prologue) && (original[i] == 0xCC || original[i] == 0x90))
+                ++i; // the hook's padding after its jump
+            for (; i < sizeof(prologue); ++i)
+                if (original[i] != prologue[i])
+                    return nullptr;
+            if (i <= 11)
+                jzDisp = static_cast<int8_t>(original[11]);
+            Log("ItemInfoLookup already hooked by another mod; chaining onto its jump");
+        } else {
             return nullptr;
-        uint8_t* jzTarget = fn + 12 + static_cast<int8_t>(original[11]);
+        }
+        uint8_t* jzTarget = fn + 12 + jzDisp;
         uint8_t code[26];
         memcpy(code, original, 10);
         code[10] = 0x75; // jnz +14 -> the loader's jump back

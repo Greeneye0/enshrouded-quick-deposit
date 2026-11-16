@@ -389,9 +389,12 @@ bool ReceivesQuickStacking(void* ctx, uint32_t chest)
     uint8_t* storage = g_flag(record, At<void*>(ctx, 0x48));
     if (!storage || !*storage)
         return false;
-    void* setting = nullptr;
-    g_component(&setting, record, At<void*>(ctx, 0x50));
-    auto* p = static_cast<uint8_t*>(setting);
+    // The component getter writes a 16-byte {pointer, index} pair, not one pointer
+    // (proven from the game's code on build 1287369): a single void* slot lets the
+    // second word overwrite the stack cookie and fail-fast the process.
+    void* setting[2] = {};
+    g_component(setting, record, At<void*>(ctx, 0x50));
+    auto* p = static_cast<uint8_t*>(setting[0]);
     return !(p && p[0] && !p[1]);
 }
 
