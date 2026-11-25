@@ -92,13 +92,21 @@ struct SlotSeen {
     bool selected;    // the slot a controller has selected
 };
 std::vector<SlotSeen> LastFrameSlots();
+// The backpack slots kept now, with the copy each holds (inv::CopyOf, -1 unknown). Dev bridge.
+struct KeptSlotInfo {
+    uint32_t page, slot, itemId, amount;
+    int copy;
+};
+std::vector<KeptSlotInfo> KeptSlotsNow();
 // Marks the item to keep count of it (0: every one), or unmarks a marked item.
 bool Toggle(uint32_t itemId, uint32_t count);
 
 // Marks of items that do not stack (gear) whose item you put away: none on you (backpack,
 // hotbar or worn) and one in these chests (your base's storage). Such a mark would otherwise
 // keep the next copy you pick up. Not cleared for an item anywhere else (a grave, a chest
-// outside the base). Returns how many marks ended. UI thread.
+// outside the base), nor for one not seen on you this session (a spare copy in a chest while
+// your pages still read wrong after loading), nor before two checks in a row agree. Returns how
+// many marks ended. UI thread.
 int UnmarkStored(const inv::Owner& player, const inv::Owner* chests, int count);
 // True if any mark keeps an amount (gear and old amount marks), so UnmarkStored has work.
 bool AnyAmountMark();

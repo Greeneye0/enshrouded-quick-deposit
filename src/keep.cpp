@@ -5,10 +5,10 @@
 // storage pages are marked (not chests, not the hotbar). Its first image is the slot background, drawn through
 // 14118ca30 DrawImageReal(widget, rect{x, y, w, h}, u32 id, u64 colour) (reached from the
 // DrawImage thunk "mov r9, [r9]; mov r8d, [r8]; jmp DrawImageReal"). While a kept item's slot
-// draws, its background is followed by the game's nine-slice glow boxes (FbUiPrimitives
-// boxInnerGlow assets + 0xd4f0, glowBoxSmall + 0xd510) in teal, drawn with 140a3a1b0
-// DrawNineSlice(widget, rect, ref, &borders[4], colour {u32 0xAABBGGRR, float alpha}). Find
-// draws its gold search highlight the same way; the two chain on the same hooks.
+// draws, its background is followed by a solid teal frame (DrawImageReal with image 0) and the
+// game's nine-slice glow box (FbUiPrimitives glowBoxSmall assets + 0xd510) outside it, drawn with
+// 140a3a1b0 DrawNineSlice(widget, rect, ref, &borders[4], colour {u32 0xAABBGGRR, float alpha}).
+// Find draws its gold search highlight with glow boxes too; the two chain on the same hooks.
 // UI assets: *(*G + 200), G = the global loaded by "mov rax, [rip+x]; mov rcx, [rax+0xd0]".
 // Rects are in UI units: 1080 high, as wide as the window's aspect makes it.
 #include <windows.h>
@@ -41,7 +41,6 @@ DrawRealFn g_originalDrawReal = nullptr;
 NineSliceFn g_nineSlice = nullptr;
 void** g_root = nullptr;
 
-constexpr size_t kAssetBoxInnerGlow = 0xd3d0 + 0x120;
 constexpr size_t kAssetGlowBoxSmall = 0xd3d0 + 0x140;
 constexpr uint32_t kKeepColour = 0xFFA5CA5D; // teal (0xAABBGGRR), apart from Find's gold
 constexpr int kMaxSlots = 256;
@@ -59,6 +58,17 @@ struct Mark {
     uint32_t free = 0;
     uint32_t seen = 0;
     std::vector<uint64_t> freed;
+    // Gear marks (UnmarkStored): the item was seen on you this session, and how many checks in a
+    // row found it gone from you and in a base chest. A mark ends only on a move you made: right
+    // after loading, your pages can still read wrong, and a spare copy in a chest then looked put
+    // away (a Bone Key lost its mark, 1.3.25).
+    bool heldSeen = false;
+    int awayChecks = 0;
+    // Gear amount marks: which copies are kept, as inv::CopyOf values ((rarity << 8) | level).
+    // Copies share one item id (two Ancient Rings of Mana, level 45 and 50), and slot ids change
+    // between sessions, so after a relog the mark kept the first ring it came to. Saved as
+    // " @rarity.level" after the amount ("Ring of Mana #4054656787 x1 @4.50").
+    std::vector<int> copies;
 };
 std::vector<Mark> g_marks;
 std::unordered_map<uint32_t, int> g_cache; // item id -> index into g_marks, -1 unmarked
@@ -74,6 +84,8 @@ std::mutex g_snapshotLock;
 std::vector<KeptItem> g_snapshot;
 uint64_t g_snapshotVersion = 0;
 uint32_t KeptHere(uint64_t key);
+int CopyAtKey(uint64_t key);
+void SaveNames();
 greeneye::input::SharedBinding g_binding;
 bool g_keyDown = false;
 
@@ -108,37 +120,46 @@ uint64_t Colour(uint32_t rgba, float alpha)
 // The name a new mark is saved under. Gear (items that do not stack) is marked piece by piece and
 // the game gives some tiers one name (Eternal Ice Bolt I to IV are all "Spell Ice Bolt Eternal"),
 // so its mark is pinned to the item id: "Spell Ice Bolt Eternal #1144190206". Item ids are the
-// same on every PC. Items that stack keep a mark by name.
+// same on every PC. Items that stack are pinned too: different items can share one name (the
+// Ectoplasm Fragment, Cluster and Aggregate are all "Green Essence"), and a mark by name marked
+// and unmarked them together. Marks by name (older ones, or typed into the ini) still work.
 const char* NameOf(uint32_t itemId, char* buf, size_t size)
 {
     inv::ItemDesc d = inv::Describe(itemId);
     if (!d.known)
         buf[0] = 0;
-    else if (d.maxStack <= 1)
-        _snprintf_s(buf, size, _TRUNCATE, "%s #%u", d.name, itemId);
     else
-        _snprintf_s(buf, size, _TRUNCATE, "%s", d.name);
+        _snprintf_s(buf, size, _TRUNCATE, "%s #%u", d.name, itemId);
     return buf;
 }
 
-// A teal border around a kept item's slot, over its background (like Find's gold highlight).
+// A kept item's slot: a solid teal frame on its edge, in the slot's own widget, and the soft glow
+// only outside it. Over the slot the glow mixed with the rarity background (a blue ring came out
+// blue-teal, a yellow staff yellow-green); a solid frame is the same teal on every slot and leaves
+// the rarity colour inside as it is. The frame is the plain image call (image 0: a filled rect).
 void DrawKeepBorder(void* widget, const float* rect)
 {
-    uint8_t* assets = Assets();
-    if (!assets || !g_nineSlice)
-        return;
     float w = rect[2], h = rect[3];
     if (!(w > 4.0f && h > 4.0f) || w > 1000.0f || h > 1000.0f)
         return;
     float m = w < h ? w : h;
-    float b = m * 0.3f;
-    float borders[4] = {b, b, b, b};
-    float grow = m * 0.08f;
-    float outer[4] = {rect[0] - grow, rect[1] - grow, w + 2 * grow, h + 2 * grow};
-    float ob = b + grow;
-    float outerBorders[4] = {ob, ob, ob, ob};
-    g_nineSlice(widget, outer, assets + kAssetGlowBoxSmall, outerBorders, Colour(kKeepColour, 0.55f));
-    g_nineSlice(widget, rect, assets + kAssetBoxInnerGlow, borders, Colour(kKeepColour, 0.9f));
+    uint8_t* assets = Assets();
+    if (assets && g_nineSlice) {
+        // The glow box's border band laid just outside the slot.
+        float grow = m * 0.14f;
+        float outer[4] = {rect[0] - grow, rect[1] - grow, w + 2 * grow, h + 2 * grow};
+        float borders[4] = {grow, grow, grow, grow};
+        g_nineSlice(widget, outer, assets + kAssetGlowBoxSmall, borders, Colour(kKeepColour, 0.6f));
+    }
+    const float t = (std::max)(2.0f, m * 0.045f);
+    const float bars[4][4] = {
+        {rect[0], rect[1], w, t},
+        {rect[0], rect[1] + h - t, w, t},
+        {rect[0], rect[1] + t, t, h - 2 * t},
+        {rect[0] + w - t, rect[1] + t, t, h - 2 * t},
+    };
+    for (const auto& b : bars)
+        g_originalDrawReal(widget, b, 0, Colour(kKeepColour, 1.0f));
 }
 
 void DrawRealHook(void* widget, const float* rect, uint32_t id, uint64_t colour)
@@ -346,12 +367,14 @@ void PlanCore(const inv::Owner& backpack, MarkOfFn markOf, const uint32_t* amoun
                         stacks.push_back({p, s, page.slots[s].count});
             }
             // Among stacks that would do as well, the ones you marked (two full stacks: the one you
-            // pressed keepKey on). Earlier stacks are taken first below.
-            if (const std::vector<uint64_t>* keys = prefer ? prefer[mark] : nullptr)
-                std::stable_partition(stacks.begin(), stacks.end(), [&](const Stack& st) {
+            // pressed keepKey on), in the order listed. Earlier stacks are taken first below.
+            if (const std::vector<uint64_t>* keys = prefer ? prefer[mark] : nullptr) {
+                auto rank = [&](const Stack& st) {
                     uint64_t key = static_cast<uint64_t>(backpack.pages[st.page].entity) << 8 | st.slot;
-                    return std::find(keys->begin(), keys->end(), key) != keys->end();
-                });
+                    return std::find(keys->begin(), keys->end(), key) - keys->begin();
+                };
+                std::stable_sort(stacks.begin(), stacks.end(), [&](const Stack& a, const Stack& b) { return rank(a) < rank(b); });
+            }
             uint32_t left = amounts[mark];
             if (left == kAll) {
                 // Every one, less what you unmarked: first the stacks you unmarked, then from the
@@ -507,6 +530,7 @@ void UpdateKeptSlots()
     PublishSnapshot();
     // The kept stacks stay the preferred ones, so a stack you pick up that would do as well (a
     // second full stack) does not take the mark.
+    bool copiesChanged = false;
     for (size_t i = 0; i < g_marks.size(); ++i) {
         if (g_marks[i].amount == kAll)
             continue; // every stack is kept; freed says which ones go
@@ -514,9 +538,35 @@ void UpdateKeptSlots()
         for (const KeptSlot& k : g_keptSlots)
             if (MarkOf(k.itemId) == static_cast<int>(i))
                 keys.push_back(k.key);
+        // The copies it keeps, saved: a mark saved without them (older versions) learns them from what it keeps
+        // now (your best copies; CopyPrefer), and one short of its amount fills up. Saved copies
+        // are never replaced here, so a copy you put away for a while gets the mark back.
+        Mark& m = g_marks[i];
+        if (m.copies.size() < m.amount) {
+            std::vector<int> have = m.copies;
+            bool added = false;
+            for (uint64_t k : keys) {
+                int c = CopyAtKey(k);
+                if (c < 0)
+                    continue;
+                auto it = std::find(have.begin(), have.end(), c);
+                if (it != have.end()) {
+                    have.erase(it);
+                    continue;
+                }
+                if (m.copies.size() < m.amount) {
+                    m.copies.push_back(c);
+                    added = true;
+                }
+            }
+            if (added)
+                copiesChanged = true;
+        }
         if (!keys.empty())
-            g_marks[i].prefer = std::move(keys);
+            m.prefer = std::move(keys);
     }
+    if (copiesChanged)
+        SaveNames();
 }
 
 // How many of the stack in this slot a deposit keeps (0: none).
@@ -552,6 +602,8 @@ void SaveNames()
         list += m.name;
         if (m.amount != kAll)
             list += " x" + std::to_string(m.amount);
+        for (int c : m.copies)
+            list += " @" + std::to_string(c >> 8) + "." + std::to_string(c & 0xff);
     }
     const char* ini = greeneye::DataPath("quick-deposit.ini");
     if (g_character.empty())
@@ -627,6 +679,26 @@ void Parse(const char* list)
         const char* end = p;
         while (end > start && end[-1] == ' ')
             --end;
+        // " @4.50 @2.45" at the end: the copies a gear mark keeps (rarity.level), last first.
+        std::vector<int> copies;
+        for (;;) {
+            const char* at = end;
+            while (at > start && ((at[-1] >= '0' && at[-1] <= '9') || at[-1] == '.'))
+                --at;
+            if (at - start < 2 || at[-1] != '@' || at[-2] != ' ' || at == end)
+                break;
+            std::string token(at, end);
+            size_t dot = token.find('.');
+            if (dot == std::string::npos || dot == 0 || dot + 1 >= token.size())
+                break;
+            int rarity = atoi(token.c_str()), level = atoi(token.c_str() + dot + 1);
+            if (rarity < 0 || rarity > 255 || level < 0 || level > 255)
+                break;
+            copies.insert(copies.begin(), rarity << 8 | level);
+            end = at - 2;
+            while (end > start && end[-1] == ' ')
+                --end;
+        }
         // "Twigs x20": keep 20; a name alone keeps every one.
         uint32_t amount = kAll;
         const char* x = end;
@@ -638,8 +710,10 @@ void Parse(const char* list)
             while (end > start && end[-1] == ' ')
                 --end;
         }
-        if (end > start && amount)
+        if (end > start && amount) {
             g_marks.push_back({std::string(start, end), amount});
+            g_marks.back().copies = std::move(copies);
+        }
     }
 }
 
@@ -834,14 +908,80 @@ bool IsKept(uint32_t itemId)
     return MarkOf(itemId) >= 0;
 }
 
+namespace {
+
+// The copy a backpack slot holds (inv::CopyOf), -1 if unknown.
+int CopyAt(const inv::Owner& owner, int p, int s)
+{
+    return inv::CopyOf(owner.pages[p].slots[s], owner.pages[p].entity, s);
+}
+
+int CopyAtKey(uint64_t key)
+{
+    for (int p = 0; p < g_backpack.pageCount; ++p)
+        if (static_cast<uint64_t>(g_backpack.pages[p].entity) == key >> 8)
+            return CopyAt(g_backpack, p, static_cast<int>(key & 0xff));
+    return -1;
+}
+
+// The order a gear amount mark takes its copies in: the copies it keeps (Mark::copies), then the
+// slots you pressed keepKey on this session, then the best of the rest (rarity, then level), so a
+// mark with no copies saved yet (older versions) keeps your best one, not the first one found.
+// False when the mark's item has only one copy here (nothing to choose).
+bool CopyPrefer(const inv::Owner& backpack, int mark, std::vector<uint64_t>& out)
+{
+    const Mark& m = g_marks[mark];
+    struct Slot {
+        uint64_t key;
+        int copy;
+    };
+    std::vector<Slot> slots;
+    for (int p = 0; p < backpack.pageCount; ++p)
+        for (int s = 0; s < inv::kSlotsPerPage; ++s) {
+            const inv::Stack& st = backpack.pages[p].slots[s];
+            if (st.itemId && st.count && MarkOf(st.itemId) == mark)
+                slots.push_back({static_cast<uint64_t>(backpack.pages[p].entity) << 8 | s, CopyAt(backpack, p, s)});
+        }
+    if (slots.size() < 2)
+        return false;
+    std::vector<bool> used(slots.size(), false);
+    for (int c : m.copies)
+        for (size_t i = 0; i < slots.size(); ++i)
+            if (!used[i] && slots[i].copy == c) {
+                used[i] = true;
+                out.push_back(slots[i].key);
+                break;
+            }
+    for (uint64_t k : m.prefer)
+        for (size_t i = 0; i < slots.size(); ++i)
+            if (!used[i] && slots[i].key == k) {
+                used[i] = true;
+                out.push_back(k);
+            }
+    std::vector<Slot> rest;
+    for (size_t i = 0; i < slots.size(); ++i)
+        if (!used[i])
+            rest.push_back(slots[i]);
+    std::stable_sort(rest.begin(), rest.end(), [](const Slot& a, const Slot& b) { return a.copy > b.copy; });
+    for (const Slot& s : rest)
+        out.push_back(s.key);
+    return true;
+}
+
+} // namespace
+
 void PlanFor(const inv::Owner& backpack, Plan& out)
 {
     std::vector<uint32_t> amounts, frees;
     std::vector<const std::vector<uint64_t>*> prefer, freed;
+    std::vector<std::vector<uint64_t>> copyOrder(g_marks.size());
     for (size_t i = 0; i < g_marks.size(); ++i) {
         const Mark& m = g_marks[i];
         amounts.push_back(m.amount);
-        prefer.push_back(&m.prefer);
+        if (m.amount != kAll && CopyPrefer(backpack, static_cast<int>(i), copyOrder[i]))
+            prefer.push_back(&copyOrder[i]);
+        else
+            prefer.push_back(&m.prefer);
         // This backpack may be newer than the last read (a deposit's later pass): what left the
         // backpack since then comes off what may go.
         frees.push_back(m.amount == kAll ? FreeNow(m, StoredFor(backpack, static_cast<int>(i))) : 0);
@@ -900,8 +1040,55 @@ uint32_t StoredCount(uint32_t itemId)
 // K on a stack of an item that stacks: the whole type is kept, also what you pick up later. K on
 // a kept stack lets just that stack go; K on the last kept one ends the mark. Old marks with an
 // amount ("Straw x50") turn into this on the first K.
+// The count in one backpack slot (page entity << 8 | slot), 0 if it is not one.
+uint32_t CountAt(uint64_t key, uint32_t itemId)
+{
+    for (int p = 0; p < g_backpack.pageCount; ++p)
+        if (static_cast<uint64_t>(g_backpack.pages[p].entity) == key >> 8) {
+            const inv::Stack& st = g_backpack.pages[p].slots[key & 0xff];
+            return st.itemId == itemId ? st.count : 0;
+        }
+    return 0;
+}
+
+// A mark by name that covers several different items in your backpack (an older "Green Essence"
+// mark keeps every ectoplasm) is split into one mark per item, pinned to its id, before K changes
+// one of them: K then changes only the item it was pressed on, and the others stay kept.
+void SplitSharedMark(uint32_t itemId)
+{
+    int mark = MarkOf(itemId);
+    if (mark < 0 || PinOf(g_marks[mark].name))
+        return;
+    std::vector<uint32_t> ids{itemId};
+    for (int p = 0; p < g_backpack.pageCount; ++p)
+        for (const inv::Stack& st : g_backpack.pages[p].slots)
+            if (st.itemId && st.count && std::find(ids.begin(), ids.end(), st.itemId) == ids.end() &&
+                MarkOf(st.itemId) == mark)
+                ids.push_back(st.itemId);
+    if (ids.size() < 2)
+        return;
+    const Mark old = g_marks[mark];
+    g_marks.erase(g_marks.begin() + mark);
+    for (uint32_t id : ids) {
+        Mark m{old.name + " #" + std::to_string(id), old.amount};
+        for (uint64_t k : old.prefer)
+            if (CountAt(k, id))
+                m.prefer.push_back(k);
+        for (uint64_t k : old.freed)
+            if (uint32_t n = CountAt(k, id)) {
+                m.freed.push_back(k);
+                m.free += n;
+            }
+        m.seen = StoredCount(id);
+        g_marks.push_back(m);
+    }
+    g_cache.clear();
+    Log("keep marks: %s split into %d marks, one per item", old.name.c_str(), static_cast<int>(ids.size()));
+}
+
 void ToggleType(uint32_t itemId, uint32_t keptHere, uint64_t key, const char* name, const char* shown)
 {
+    SplitSharedMark(itemId);
     int mark = MarkOf(itemId);
     uint32_t total = StoredCount(itemId);
     char line[256];
@@ -986,6 +1173,17 @@ bool ToggleStack(uint32_t itemId, uint32_t count, uint32_t keptHere, uint64_t ke
         m.prefer.erase(std::remove(m.prefer.begin(), m.prefer.end(), key), m.prefer.end());
         if (!keptHere)
             m.prefer.push_back(key);
+        // The copy in this slot joins or leaves the kept copies; never more than the amount.
+        const int copy = CopyAtKey(key);
+        if (keptHere) {
+            auto it = std::find(m.copies.begin(), m.copies.end(), copy);
+            if (copy >= 0 && it != m.copies.end())
+                m.copies.erase(it);
+        } else if (copy >= 0) {
+            m.copies.push_back(copy);
+        }
+        while (m.copies.size() > m.amount)
+            m.copies.erase(m.copies.begin());
         Say(line, sizeof(line), lang::Str::KeepingCount, amount, shown);
     }
     g_cache.clear();
@@ -1006,35 +1204,53 @@ bool AnyAmountMark()
 
 int UnmarkStored(const inv::Owner& player, const inv::Owner* chests, int count)
 {
-    int ended = 0;
+    constexpr int kAwayChecks = 2; // checks in a row (5 s apart) before a mark ends
     if (!MarksSettled())
         return 0;
+    // Marks that cover an item you hold: seen on you. A mark is by name, and items of different
+    // tiers can share it (Eternal Ice Bolt I and IV): it stays while you hold any item it covers.
+    std::vector<uint8_t> away(g_marks.size(), 0);
+    std::vector<uint32_t> where(g_marks.size(), 0), what(g_marks.size(), 0);
+    for (size_t m = 0; m < g_marks.size(); ++m)
+        if (g_marks[m].amount != kAll && MarkHeld(player, static_cast<int>(m))) {
+            g_marks[m].heldSeen = true;
+            g_marks[m].awayChecks = 0;
+        }
     for (int c = 0; c < count; ++c)
         for (int p = 0; p < chests[c].pageCount; ++p)
             for (const inv::Stack& st : chests[c].pages[p].slots) {
                 int mark = st.itemId ? MarkOf(st.itemId) : -1;
-                if (mark < 0 || g_marks[mark].amount == kAll)
+                if (mark < 0 || away[mark] || g_marks[mark].amount == kAll || !g_marks[mark].heldSeen)
                     continue;
                 inv::ItemDesc d = inv::Describe(st.itemId);
-                if (!d.known || d.maxStack > 1)
+                if (!d.known || d.maxStack > 1 || MarkHeld(player, mark))
                     continue;
-                // A mark is by name, and items of different tiers can share it (Eternal Ice Bolt I
-                // and IV): the mark stays while you hold any item it covers.
-                if (MarkHeld(player, mark))
-                    continue;
-                g_marks.erase(g_marks.begin() + mark);
-                g_cache.clear();
-                char line[256];
-                Say(line, sizeof(line), lang::Str::NoLongerKeeping, d.shown);
-                chat::Post(line);
-                Log("keep marks: %s - put away in chest %u (item %u)", line + 15, chests[c].entity, st.itemId);
-                ++ended;
+                away[mark] = 1;
+                where[mark] = chests[c].entity;
+                what[mark] = st.itemId;
             }
-    if (ended) {
+    std::vector<int> ending;
+    for (size_t m = 0; m < g_marks.size(); ++m) {
+        if (!away[m])
+            g_marks[m].awayChecks = 0;
+        else if (++g_marks[m].awayChecks >= kAwayChecks)
+            ending.push_back(static_cast<int>(m));
+    }
+    for (auto it = ending.rbegin(); it != ending.rend(); ++it) {
+        const int mark = *it;
+        inv::ItemDesc d = inv::Describe(what[mark]);
+        g_marks.erase(g_marks.begin() + mark);
+        char line[256];
+        Say(line, sizeof(line), lang::Str::NoLongerKeeping, d.shown);
+        chat::Post(line);
+        Log("keep marks: %s - put away in chest %u (item %u)", line + 15, where[mark], what[mark]);
+    }
+    if (!ending.empty()) {
+        g_cache.clear();
         SaveNames();
         UpdateKeptSlots();
     }
-    return ended;
+    return static_cast<int>(ending.size());
 }
 
 bool Toggle(uint32_t itemId, uint32_t count)
@@ -1044,6 +1260,7 @@ bool Toggle(uint32_t itemId, uint32_t count)
         return false;
     inv::ItemDesc desc = inv::Describe(itemId);
     const char* shown = desc.shown; // chat: the name as the game shows it
+    SplitSharedMark(itemId);
     int mark = MarkOf(itemId);
     char line[256];
     if (mark >= 0) {
@@ -1154,6 +1371,15 @@ bool OverBackpackSlot(bool pad)
                 : cursor && x >= s.rect[0] && x < s.rect[0] + s.rect[2] && y >= s.rect[1] && y < s.rect[1] + s.rect[3])
             return true;
     return false;
+}
+
+std::vector<KeptSlotInfo> KeptSlotsNow()
+{
+    std::vector<KeptSlotInfo> out;
+    for (const KeptSlot& k : g_keptSlots)
+        out.push_back({static_cast<uint32_t>(k.key >> 8), static_cast<uint32_t>(k.key & 0xff), k.itemId, k.amount,
+                       CopyAtKey(k.key)});
+    return out;
 }
 
 std::vector<SlotSeen> LastFrameSlots()

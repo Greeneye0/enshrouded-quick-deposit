@@ -647,6 +647,61 @@ bool ReadOwner(uint32_t entity, Owner& out)
     return out.pageCount > 0;
 }
 
+// The ItemState component of an item entity (keen::ecs::ItemState, 0x14 bytes): +0 the slot it is
+// in {u32 page entity, u32 slot}, +8 item id, +0x10 rarity, +0x11 level. Its type number is told
+// on the first gear stack read: the one component of the item entity that names that stack's page,
+// slot and item.
+uint16_t g_typeItemState = 0;
+
+bool ReadItemState(uint16_t type, uint32_t pide, uint8_t out[0x14])
+{
+    auto* data = static_cast<uint8_t*>(Component(g_registry, type, pide));
+    if (!data)
+        return false;
+    __try {
+        memcpy(out, data, 0x14);
+    } __except (EXCEPTION_EXECUTE_HANDLER) {
+        return false;
+    }
+    return true;
+}
+
+int CopyOf(const Stack& stack, uint32_t pageEntity, int slot)
+{
+    if (!g_registry || !stack.itemId || !stack.pide)
+        return -1;
+    uint8_t s[0x14];
+    if (!g_typeItemState) {
+        uint16_t types[kComponentBits];
+        int n = EntityTypes(g_registry, stack.pide, types, kComponentBits);
+        int found = 0;
+        uint16_t type = 0;
+        for (int i = 0; i < n; ++i) {
+            if (!ReadItemState(types[i], stack.pide, s))
+                continue;
+            uint32_t page, index, item;
+            memcpy(&page, s, 4);
+            memcpy(&index, s + 4, 4);
+            memcpy(&item, s + 8, 4);
+            if (page == pageEntity && index == static_cast<uint32_t>(slot) && item == stack.itemId) {
+                ++found;
+                type = types[i];
+            }
+        }
+        if (found != 1)
+            return -1;
+        g_typeItemState = type;
+        Log("ItemState type %u (told on item entity %u)", type, stack.pide);
+    }
+    if (!ReadItemState(g_typeItemState, stack.pide, s))
+        return -1;
+    uint32_t item;
+    memcpy(&item, s + 8, 4);
+    if (item != stack.itemId)
+        return -1;
+    return s[0x10] << 8 | s[0x11];
+}
+
 bool IsHotbarPage(const Owner& player, uint32_t pageEntity)
 {
     if (!g_registry)
@@ -1307,6 +1362,7 @@ void Forget()
     g_registry = nullptr;
     g_typeSetup = 0;
     g_typeHotbar = 0;
+    g_typeItemState = 0;
     g_positionFound = false; // types are numbered per session
     g_inventoryFound = false;
     for (auto& slot : g_seen)

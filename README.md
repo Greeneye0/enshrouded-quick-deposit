@@ -105,7 +105,7 @@ The chests a station fills glow green too.
 ## Install
 
 1. Close Enshrouded.
-2. Download `QuickDeposit-1.3.25.zip` from [Releases](../../releases/latest) or
+2. Download `QuickDeposit-1.3.26.zip` from [Releases](../../releases/latest) or
    [Nexus Mods](https://www.nexusmods.com/enshrouded/mods/195).
 3. In Steam: right-click Enshrouded > Manage > Browse local files.
 4. Copy everything from the zip into that folder, keeping the folders: `dbgcore.dll` (the

@@ -76,6 +76,11 @@ bool ReadOwner(uint32_t entity, Owner& out);
 // detected on first use. When it can't be found, every page counts as hotbar (safe side).
 bool IsHotbarPage(const Owner& player, uint32_t pageEntity);
 
+// Which copy of a gear item a slot holds: (rarity << 8) | level from the ItemState component of
+// the stack's own item entity (its pide), as the item card shows them. Two copies with one item
+// id (an Ancient Ring of Mana at level 45 and one at level 50) differ here. -1 if it can't be read.
+int CopyOf(const Stack& stack, uint32_t pageEntity, int slot);
+
 // Every container (entity with an inventory setup, not a player) whose position lies inside
 // the box. Walks the client registry's entity table once. Returns how many were written.
 int FindContainers(const float lo[3], const float hi[3], uint32_t* out, int max);
